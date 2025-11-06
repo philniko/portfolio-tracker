@@ -15,6 +15,8 @@ export default function PortfolioDetail() {
   const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
   const [error, setError] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const transactionsPerPage = 20;
   const queryClient = useQueryClient();
 
   const { data: portfolio, isLoading: portfolioLoading } = useQuery({
@@ -75,6 +77,22 @@ export default function PortfolioDetail() {
       notes: notes || undefined,
     });
   };
+
+  // Calculate dividend total from last year
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  const dividendTotal = transactions
+    ?.filter((txn: any) =>
+      txn.transaction_type === 'DIVIDEND' &&
+      new Date(txn.transaction_date) >= oneYearAgo
+    )
+    .reduce((sum: number, txn: any) => sum + parseFloat(txn.total_amount), 0) || 0;
+
+  // Pagination calculations
+  const totalPages = Math.ceil((transactions?.length || 0) / transactionsPerPage);
+  const startIndex = (currentPage - 1) * transactionsPerPage;
+  const endIndex = startIndex + transactionsPerPage;
+  const paginatedTransactions = transactions?.slice(startIndex, endIndex) || [];
 
   if (portfolioLoading) {
     return <div style={{ padding: '20px' }}>Loading...</div>;
@@ -201,7 +219,7 @@ export default function PortfolioDetail() {
 
       <div style={{ marginTop: '30px' }}>
         <h2>Portfolio Summary</h2>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '20px', marginTop: '15px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '15px' }}>
           <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
             <div style={{ fontSize: '14px', color: '#666' }}>Total Value</div>
             <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
@@ -236,6 +254,13 @@ export default function PortfolioDetail() {
               }}
             >
               {portfolio?.total_gain_loss_percent ? parseFloat(portfolio.total_gain_loss_percent).toFixed(2) : '0.00'}%
+            </div>
+          </div>
+          <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#e7f3ff' }}>
+            <div style={{ fontSize: '14px', color: '#666' }}>Income (Last Year)</div>
+            <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>Dividends, Distributions, Interest</div>
+            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>
+              ${dividendTotal.toFixed(2)}
             </div>
           </div>
         </div>
@@ -292,44 +317,104 @@ export default function PortfolioDetail() {
       </div>
 
       <div style={{ marginTop: '30px' }}>
-        <h2>Recent Transactions</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2>All Transactions ({transactions?.length || 0})</h2>
+          {totalPages > 1 && (
+            <div style={{ fontSize: '14px', color: '#666' }}>
+              Page {currentPage} of {totalPages}
+            </div>
+          )}
+        </div>
         {transactions && transactions.length > 0 ? (
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px' }}>
-            <thead>
-              <tr style={{ borderBottom: '2px solid #ddd', backgroundColor: '#f5f5f5' }}>
-                <th style={{ padding: '10px', textAlign: 'left' }}>Date</th>
-                <th style={{ padding: '10px', textAlign: 'left' }}>Type</th>
-                <th style={{ padding: '10px', textAlign: 'left' }}>Symbol</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Quantity</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Price</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {transactions.slice(0, 10).map((txn: any) => (
-                <tr key={txn.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '10px' }}>{new Date(txn.transaction_date).toLocaleDateString()}</td>
-                  <td style={{ padding: '10px' }}>
-                    <span style={{
-                      padding: '4px 8px',
-                      borderRadius: '4px',
-                      fontSize: '12px',
-                      backgroundColor: txn.transaction_type === 'BUY' ? '#d4edda' : txn.transaction_type === 'SELL' ? '#f8d7da' : '#d1ecf1',
-                      color: txn.transaction_type === 'BUY' ? '#155724' : txn.transaction_type === 'SELL' ? '#721c24' : '#0c5460'
-                    }}>
-                      {txn.transaction_type}
-                    </span>
-                  </td>
-                  <td style={{ padding: '10px', fontWeight: 'bold' }}>{txn.symbol}</td>
-                  <td style={{ padding: '10px', textAlign: 'right' }}>{parseFloat(txn.quantity).toFixed(2)}</td>
-                  <td style={{ padding: '10px', textAlign: 'right' }}>${parseFloat(txn.price).toFixed(2)}</td>
-                  <td style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>
-                    ${parseFloat(txn.total_amount).toFixed(2)}
-                  </td>
+          <>
+            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px' }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #ddd', backgroundColor: '#f5f5f5' }}>
+                  <th style={{ padding: '10px', textAlign: 'left' }}>Date</th>
+                  <th style={{ padding: '10px', textAlign: 'left' }}>Type</th>
+                  <th style={{ padding: '10px', textAlign: 'left' }}>Symbol</th>
+                  <th style={{ padding: '10px', textAlign: 'right' }}>Quantity</th>
+                  <th style={{ padding: '10px', textAlign: 'right' }}>Price</th>
+                  <th style={{ padding: '10px', textAlign: 'right' }}>Total</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {paginatedTransactions.map((txn: any) => {
+                  // Determine display label for transaction type
+                  let displayType = txn.transaction_type;
+                  if (txn.transaction_type === 'DIVIDEND' && txn.notes) {
+                    if (txn.notes.startsWith('ETF Distribution:')) {
+                      displayType = 'ETF DIST';
+                    } else if (txn.notes.startsWith('Interest:')) {
+                      displayType = 'INTEREST';
+                    } else if (txn.notes.includes('Distribution:')) {
+                      displayType = 'DISTRIBUTION';
+                    } else if (txn.notes.startsWith('Dividend:')) {
+                      displayType = 'DIVIDEND';
+                    }
+                  }
+
+                  return (
+                    <tr key={txn.id} style={{ borderBottom: '1px solid #eee' }}>
+                      <td style={{ padding: '10px' }}>{new Date(txn.transaction_date).toLocaleDateString()}</td>
+                      <td style={{ padding: '10px' }}>
+                        <span style={{
+                          padding: '4px 8px',
+                          borderRadius: '4px',
+                          fontSize: '12px',
+                          backgroundColor: txn.transaction_type === 'BUY' ? '#d4edda' : txn.transaction_type === 'SELL' ? '#f8d7da' : '#d1ecf1',
+                          color: txn.transaction_type === 'BUY' ? '#155724' : txn.transaction_type === 'SELL' ? '#721c24' : '#0c5460'
+                        }}>
+                          {displayType}
+                        </span>
+                      </td>
+                      <td style={{ padding: '10px', fontWeight: 'bold' }}>{txn.symbol}</td>
+                      <td style={{ padding: '10px', textAlign: 'right' }}>{parseFloat(txn.quantity).toFixed(2)}</td>
+                      <td style={{ padding: '10px', textAlign: 'right' }}>${parseFloat(txn.price).toFixed(2)}</td>
+                      <td style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>
+                        ${parseFloat(txn.total_amount).toFixed(2)}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '10px', marginTop: '20px' }}>
+                <button
+                  onClick={() => setCurrentPage(1)}
+                  disabled={currentPage === 1}
+                  style={{ padding: '8px 12px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+                >
+                  First
+                </button>
+                <button
+                  onClick={() => setCurrentPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  style={{ padding: '8px 12px', cursor: currentPage === 1 ? 'not-allowed' : 'pointer' }}
+                >
+                  Previous
+                </button>
+                <span style={{ padding: '8px 12px' }}>
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  style={{ padding: '8px 12px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
+                >
+                  Next
+                </button>
+                <button
+                  onClick={() => setCurrentPage(totalPages)}
+                  disabled={currentPage === totalPages}
+                  style={{ padding: '8px 12px', cursor: currentPage === totalPages ? 'not-allowed' : 'pointer' }}
+                >
+                  Last
+                </button>
+              </div>
+            )}
+          </>
         ) : (
           <p style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
             No transactions yet.

@@ -25,8 +25,17 @@ class Settings(BaseSettings):
     # CORS
     CORS_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:5173"]
 
+    # Frontend URL (for OAuth redirects)
+    FRONTEND_URL: str = "http://localhost:5173"
+
     # Stock API
     ALPHA_VANTAGE_API_KEY: str | None = None
+
+    # Questrade API
+    QUESTRADE_CLIENT_ID: str = ""
+    QUESTRADE_CLIENT_SECRET: str = ""
+    QUESTRADE_REFRESH_TOKEN: str = ""
+    QUESTRADE_REDIRECT_URI: str = "http://localhost:8000/api/v1/questrade/callback"
 
     # Celery
     CELERY_BROKER_URL: str = "redis://localhost:6379/1"

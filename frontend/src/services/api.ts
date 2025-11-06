@@ -82,3 +82,32 @@ export const stockAPI = {
   getBatchPrices: (symbols: string[]) =>
     api.post('/stocks/batch', symbols),
 };
+
+// Questrade API
+export const questradeAPI = {
+  getStatus: () => api.get('/questrade/status'),
+
+  authorize: () => {
+    // Redirect to backend OAuth endpoint
+    window.location.href = `${API_BASE_URL}/questrade/authorize`;
+  },
+
+  connectWithToken: (refreshToken: string) =>
+    api.post('/questrade/connect-with-token', { refresh_token: refreshToken }),
+
+  getAccounts: () => api.get('/questrade/accounts'),
+
+  getPositions: (accountId: string) => api.get(`/questrade/positions/${accountId}`),
+
+  getBalances: (accountId: string) => api.get(`/questrade/balances/${accountId}`),
+
+  getActivities: (accountId: string, startDate: string, endDate: string) =>
+    api.get(`/questrade/activities/${accountId}`, {
+      params: { start_date: startDate, end_date: endDate },
+    }),
+
+  syncToPortfolio: (portfolioId: number, accountId: string, includeDividends: boolean = true) =>
+    api.post(`/questrade/sync/${portfolioId}/${accountId}?include_dividends=${includeDividends}`),
+
+  disconnect: () => api.delete('/questrade/disconnect'),
+};

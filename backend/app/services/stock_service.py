@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Dict, Optional
 import redis.asyncio as redis
 import json
+import requests
 from app.core.config import settings
 from app.core.exceptions import StockDataException
 from app.schemas.transaction import StockPriceResponse
@@ -14,6 +15,11 @@ class StockService:
 
     def __init__(self):
         self.redis_client: Optional[redis.Redis] = None
+        # Create session with custom headers to avoid Yahoo Finance blocking
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+        })
 
     async def init_redis(self):
         """Initialize Redis connection."""
@@ -50,41 +56,65 @@ class StockService:
                 data = json.loads(cached_data)
                 return StockPriceResponse(**data)
 
-        # Fetch from yfinance
+        # Fetch directly from Yahoo Finance API - more reliable than yfinance
         try:
-            ticker = yf.Ticker(symbol)
-            info = ticker.info
-            hist = ticker.history(period="1d")
+            # Use Yahoo Finance v8 API directly
+            url = f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol.upper()}"
+            params = {
+                "interval": "1d",
+                "range": "5d"
+            }
 
-            if hist.empty or "currentPrice" not in info:
+            response = self.session.get(url, params=params, timeout=10)
+            response.raise_for_status()
+
+            data = response.json()
+
+            # Extract data from response
+            if not data.get("chart") or not data["chart"].get("result"):
                 raise StockDataException(f"No data available for symbol: {symbol}")
 
-            current_price = Decimal(str(info.get("currentPrice", hist["Close"].iloc[-1])))
-            previous_close = Decimal(str(info.get("previousClose", 0)))
-            change = current_price - previous_close if previous_close else None
-            change_percent = (
-                (change / previous_close * 100) if change and previous_close else None
-            )
+            result = data["chart"]["result"][0]
+            meta = result.get("meta", {})
+            quotes = result.get("indicators", {}).get("quote", [{}])[0]
+            timestamps = result.get("timestamp", [])
+
+            if not timestamps or not quotes.get("close"):
+                raise StockDataException(f"No price data available for symbol: {symbol}")
+
+            # Get most recent data (last element)
+            current_price = Decimal(str(quotes["close"][-1]))
+            previous_close = Decimal(str(meta.get("chartPreviousClose", quotes["close"][-2] if len(quotes["close"]) > 1 else quotes["close"][-1])))
+
+            # Calculate change
+            change = current_price - previous_close
+            change_percent = (change / previous_close * 100) if previous_close else None
+
+            # Get other data
+            open_price = Decimal(str(quotes["open"][-1])) if quotes.get("open") and quotes["open"][-1] is not None else None
+            day_high = Decimal(str(quotes["high"][-1])) if quotes.get("high") and quotes["high"][-1] is not None else None
+            day_low = Decimal(str(quotes["low"][-1])) if quotes.get("low") and quotes["low"][-1] is not None else None
+            volume = int(quotes["volume"][-1]) if quotes.get("volume") and quotes["volume"][-1] is not None else None
 
             stock_data = StockPriceResponse(
                 symbol=symbol.upper(),
                 current_price=current_price,
-                previous_close=previous_close or None,
-                open_price=Decimal(str(info.get("open", 0))) or None,
-                day_high=Decimal(str(info.get("dayHigh", 0))) or None,
-                day_low=Decimal(str(info.get("dayLow", 0))) or None,
-                volume=info.get("volume"),
-                market_cap=Decimal(str(info.get("marketCap", 0))) if info.get("marketCap") else None,
+                previous_close=previous_close,
+                open_price=open_price,
+                day_high=day_high,
+                day_low=day_low,
+                volume=volume,
+                market_cap=meta.get("marketCap"),
                 change=change,
                 change_percent=change_percent,
                 timestamp=datetime.utcnow(),
             )
 
-            # Cache the result
+            # Cache the result for longer to reduce API calls
             if self.redis_client:
                 await self.redis_client.setex(
                     cache_key,
-                    settings.STOCK_CACHE_EXPIRE_SECONDS,
+                    300,  # 5 minutes cache
                     json.dumps(stock_data.model_dump(), default=str),
                 )
 

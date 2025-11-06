@@ -19,3 +19,4 @@ class User(Base):
 
     # Relationships
     portfolios = relationship("Portfolio", back_populates="owner", cascade="all, delete-orphan")
+    questrade_connection = relationship("QuestradeConnection", back_populates="user", uselist=False, cascade="all, delete-orphan")

@@ -16,7 +16,7 @@ bcrypt==4.0.1
 python-dotenv==1.0.0
 
 # Stock Data APIs
-yfinance==0.2.36
+yfinance==0.2.48
 requests==2.31.0
 
 # Caching
