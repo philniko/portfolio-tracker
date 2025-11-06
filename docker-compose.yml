@@ -52,6 +52,7 @@ services:
       CELERY_RESULT_BACKEND: redis://redis:6379/2
       QUESTRADE_CLIENT_ID: rBFc4BgHUCTlz79HjhZ2AAsV7_Zyew
       QUESTRADE_REFRESH_TOKEN: kghWS94lUG2gOBYAPHw1u42_dujG5MYo0
+      OPENAI_API_KEY: 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
     volumes:
       - ./backend/app:/app/app
       - ./backend/alembic:/app/alembic

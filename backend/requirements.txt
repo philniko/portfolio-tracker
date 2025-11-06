@@ -39,3 +39,6 @@ faker==22.0.0
 
 # Background Tasks
 celery==5.3.6
+
+# AI Integration
+openai==1.12.0

@@ -1,7 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useParams, Link } from 'react-router-dom';
-import { portfolioAPI, transactionAPI } from '../services/api';
+import { portfolioAPI, transactionAPI, aiAdvisorAPI } from '../services/api';
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import '../styles/markdown.css';
 
 export default function PortfolioDetail() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +19,8 @@ export default function PortfolioDetail() {
   const [error, setError] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
   const transactionsPerPage = 20;
+  const [showAIAnalysis, setShowAIAnalysis] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState('');
   const queryClient = useQueryClient();
 
   const { data: portfolio, isLoading: portfolioLoading } = useQuery({
@@ -45,6 +49,18 @@ export default function PortfolioDetail() {
     },
     onError: (err: any) => {
       setError(err.response?.data?.detail || 'Failed to add transaction');
+    },
+  });
+
+  const aiAnalysisMutation = useMutation({
+    mutationFn: () => aiAdvisorAPI.analyzePortfolio(portfolioId),
+    onSuccess: (response: any) => {
+      setAiAnalysis(response.data.analysis);
+      setShowAIAnalysis(true);
+    },
+    onError: (err: any) => {
+      setAiAnalysis(err.response?.data?.detail || 'Failed to generate AI analysis. Please make sure your OpenAI API key is configured.');
+      setShowAIAnalysis(true);
     },
   });
 
@@ -218,7 +234,16 @@ export default function PortfolioDetail() {
       )}
 
       <div style={{ marginTop: '30px' }}>
-        <h2>Portfolio Summary</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <h2>Portfolio Summary</h2>
+          <button
+            onClick={() => aiAnalysisMutation.mutate()}
+            disabled={aiAnalysisMutation.isPending}
+            style={{ backgroundColor: '#6f42c1', padding: '10px 20px', color: 'white' }}
+          >
+            {aiAnalysisMutation.isPending ? 'Analyzing...' : '🤖 Get AI Advice'}
+          </button>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '15px' }}>
           <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
             <div style={{ fontSize: '14px', color: '#666' }}>Total Value</div>
@@ -265,6 +290,40 @@ export default function PortfolioDetail() {
           </div>
         </div>
       </div>
+
+      {showAIAnalysis && aiAnalysis && (
+        <div style={{
+          marginTop: '30px',
+          padding: '20px',
+          border: '2px solid #6f42c1',
+          borderRadius: '8px',
+          backgroundColor: '#f8f5ff'
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '15px' }}>
+            <h2 style={{ margin: 0 }}>🤖 AI Portfolio Analysis</h2>
+            <button
+              onClick={() => setShowAIAnalysis(false)}
+              style={{
+                backgroundColor: 'transparent',
+                border: 'none',
+                fontSize: '24px',
+                cursor: 'pointer',
+                padding: '0 10px'
+              }}
+            >
+              ×
+            </button>
+          </div>
+          <div style={{
+            lineHeight: '1.6',
+            fontSize: '15px',
+            color: '#333'
+          }}
+          className="ai-analysis-markdown">
+            <ReactMarkdown>{aiAnalysis}</ReactMarkdown>
+          </div>
+        </div>
+      )}
 
       <div style={{ marginTop: '30px' }}>
         <h2>Holdings</h2>

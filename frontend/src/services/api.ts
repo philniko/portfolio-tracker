@@ -111,3 +111,9 @@ export const questradeAPI = {
 
   disconnect: () => api.delete('/questrade/disconnect'),
 };
+
+// AI Advisor API
+export const aiAdvisorAPI = {
+  analyzePortfolio: (portfolioId: number) =>
+    api.post(`/ai/analyze/${portfolioId}`),
+};

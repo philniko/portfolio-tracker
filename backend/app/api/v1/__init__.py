@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import auth, portfolios, transactions, stocks, websocket, questrade
+from app.api.v1 import auth, portfolios, transactions, stocks, websocket, questrade, ai_advisor
 
 api_router = APIRouter()
 
@@ -8,4 +8,5 @@ api_router.include_router(portfolios.router, prefix="/portfolios", tags=["portfo
 api_router.include_router(transactions.router, prefix="/transactions", tags=["transactions"])
 api_router.include_router(stocks.router, prefix="/stocks", tags=["stocks"])
 api_router.include_router(questrade.router, prefix="/questrade", tags=["questrade"])
+api_router.include_router(ai_advisor.router, prefix="/ai", tags=["ai-advisor"])
 api_router.include_router(websocket.router, tags=["websocket"])
