@@ -88,7 +88,9 @@ class PortfolioRepository:
         await self.db.refresh(holding)
         return holding
 
-    async def delete_holding(self, holding: Holding) -> None:
-        """Delete a holding."""
-        await self.db.delete(holding)
-        await self.db.flush()
+    async def delete_holding(self, portfolio_id: int, symbol: str) -> None:
+        """Delete a holding by portfolio_id and symbol."""
+        holding = await self.get_holding(portfolio_id, symbol)
+        if holding:
+            await self.db.delete(holding)
+            await self.db.flush()

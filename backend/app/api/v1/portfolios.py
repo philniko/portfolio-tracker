@@ -43,6 +43,8 @@ async def list_portfolios(
                 id=portfolio.id,
                 name=portfolio.name,
                 description=portfolio.description,
+                questrade_account_id=portfolio.questrade_account_id,
+                last_questrade_sync=portfolio.last_questrade_sync,
                 holdings_count=len(portfolio.holdings),
                 total_value=None,  # Can be enhanced to calculate
                 total_cost=None,
@@ -197,3 +199,68 @@ async def delete_portfolio(
         raise ForbiddenException("Not authorized to delete this portfolio")
 
     await portfolio_repo.delete(portfolio)
+
+
+
+@router.post("/{portfolio_id}/sync-questrade")
+async def sync_questrade(
+    portfolio_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Sync a Questrade-linked portfolio with latest data from Questrade account.
+
+    This endpoint syncs positions and dividends from a Questrade account that is
+    already linked to the portfolio. The portfolio must have been previously synced
+    via the /questrade/sync endpoint to establish the account link.
+
+    Features:
+    - Syncs current positions from the linked Questrade account
+    - Imports dividends and distributions from the last 365 days
+    - Deduplicates existing transactions to avoid double-counting
+    - Updates holdings automatically
+    - Records sync timestamp
+
+    Args:
+        portfolio_id: Portfolio ID to sync
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Sync result with counts of synced positions and dividends
+
+    Raises:
+        NotFoundException: If portfolio not found or Questrade not connected
+        ForbiddenException: If portfolio not linked to Questrade or not owned by user
+    """
+    from app.services.questrade_service import questrade_service
+    from app.services.questrade_sync_service import questrade_sync_service
+    
+    portfolio_repo = PortfolioRepository(db)
+    portfolio = await portfolio_repo.get_by_id(portfolio_id)
+    
+    if not portfolio:
+        raise NotFoundException("Portfolio not found")
+    
+    if portfolio.user_id != current_user.id:
+        raise ForbiddenException("Not authorized to access this portfolio")
+    
+    if not portfolio.questrade_account_id:
+        raise ForbiddenException("This portfolio is not linked to a Questrade account")
+    
+    # Get Questrade connection
+    connection = await questrade_service.get_connection(db, current_user.id)
+    if not connection:
+        raise NotFoundException("Questrade not connected")
+    
+    # Sync the portfolio
+    result = await questrade_sync_service.sync_account_to_portfolio(
+        db=db,
+        user_id=current_user.id,
+        portfolio_id=portfolio_id,
+        account_id=portfolio.questrade_account_id,
+        include_dividends=True
+    )
+    
+    return result

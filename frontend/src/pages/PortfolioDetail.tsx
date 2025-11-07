@@ -64,6 +64,32 @@ export default function PortfolioDetail() {
     },
   });
 
+  const deleteTransactionMutation = useMutation({
+    mutationFn: (transactionId: number) => transactionAPI.delete(transactionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', portfolioId] });
+    },
+  });
+
+  const syncQuestradeMutation = useMutation({
+    mutationFn: () => portfolioAPI.syncQuestrade(portfolioId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', portfolioId] });
+      alert('Portfolio synced successfully!');
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.detail || 'Failed to sync portfolio');
+    },
+  });
+
+  const handleDeleteTransaction = (transactionId: number, symbol: string, type: string) => {
+    if (window.confirm(`Are you sure you want to delete this ${type} transaction for ${symbol}?`)) {
+      deleteTransactionMutation.mutate(transactionId);
+    }
+  };
+
   const resetForm = () => {
     setSymbol('');
     setTransactionType('BUY');
@@ -122,15 +148,37 @@ export default function PortfolioDetail() {
 
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
-          <h1>{portfolio?.name}</h1>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <h1>{portfolio?.name}</h1>
+            {portfolio?.questrade_account_id && (
+              <span className="badge badge-success">🔗 Questrade</span>
+            )}
+          </div>
           <p style={{ color: '#666' }}>{portfolio?.description}</p>
+          {portfolio?.last_questrade_sync && (
+            <p style={{ fontSize: '12px', color: '#888', marginTop: '5px' }}>
+              Last synced: {new Date(portfolio.last_questrade_sync).toLocaleString()}
+            </p>
+          )}
         </div>
-        <button
-          onClick={() => setShowAddTransaction(!showAddTransaction)}
-          style={{ backgroundColor: '#007bff', padding: '10px 20px' }}
-        >
-          {showAddTransaction ? 'Cancel' : '+ Add Transaction'}
-        </button>
+        <div style={{ display: 'flex', gap: '10px' }}>
+          {portfolio?.questrade_account_id && (
+            <button
+              onClick={() => syncQuestradeMutation.mutate()}
+              disabled={syncQuestradeMutation.isPending}
+              className="btn-success"
+              style={{ padding: '10px 20px' }}
+            >
+              {syncQuestradeMutation.isPending ? 'Syncing...' : '🔄 Sync Questrade'}
+            </button>
+          )}
+          <button
+            onClick={() => setShowAddTransaction(!showAddTransaction)}
+            style={{ backgroundColor: '#007bff', padding: '10px 20px' }}
+          >
+            {showAddTransaction ? 'Cancel' : '+ Add Transaction'}
+          </button>
+        </div>
       </div>
 
       {showAddTransaction && (
@@ -395,6 +443,7 @@ export default function PortfolioDetail() {
                   <th style={{ padding: '10px', textAlign: 'right' }}>Quantity</th>
                   <th style={{ padding: '10px', textAlign: 'right' }}>Price</th>
                   <th style={{ padding: '10px', textAlign: 'right' }}>Total</th>
+                  <th style={{ padding: '10px', textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -432,6 +481,21 @@ export default function PortfolioDetail() {
                       <td style={{ padding: '10px', textAlign: 'right' }}>${parseFloat(txn.price).toFixed(2)}</td>
                       <td style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>
                         ${parseFloat(txn.total_amount).toFixed(2)}
+                      </td>
+                      <td style={{ padding: '10px', textAlign: 'center' }}>
+                        <button
+                          onClick={() => handleDeleteTransaction(txn.id, txn.symbol, displayType)}
+                          className="btn-danger"
+                          style={{
+                            padding: '6px 12px',
+                            fontSize: '12px',
+                            opacity: deleteTransactionMutation.isPending ? 0.5 : 1
+                          }}
+                          disabled={deleteTransactionMutation.isPending}
+                          title="Delete transaction"
+                        >
+                          Delete
+                        </button>
                       </td>
                     </tr>
                   );

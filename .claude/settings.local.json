@@ -10,7 +10,9 @@
       "Bash(python3:*)",
       "Bash(docker-compose exec:*)",
       "WebSearch",
-      "Bash(docker logs:*)"
+      "Bash(docker logs:*)",
+      "Bash(cat:*)",
+      "Bash(alembic history:*)"
     ],
     "deny": [],
     "ask": []

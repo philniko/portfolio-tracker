@@ -22,7 +22,39 @@ async def analyze_portfolio(
     current_user: User = Depends(get_current_active_user),
 ):
     """
-    Get AI-powered analysis and advice for a portfolio.
+    Get AI-powered analysis and investment advice for a portfolio.
+
+    Uses OpenAI GPT-4o-mini to analyze portfolio composition, individual holdings,
+    and provide personalized investment recommendations based on current market data.
+
+    Analysis includes:
+    - Portfolio overview and diversification assessment
+    - Individual stock performance and outlook
+    - Risk analysis (concentration, sector exposure)
+    - Buy/sell/hold recommendations for each holding
+    - Market insights and relevant trends
+    - Tax considerations (for Canadian investors)
+
+    The analysis considers:
+    - Current holdings with real-time prices
+    - Cost basis and unrealized gains/losses
+    - Transaction history
+    - Overall portfolio performance metrics
+
+    Args:
+        portfolio_id: Portfolio ID to analyze
+        db: Database session
+        current_user: Current authenticated user
+
+    Returns:
+        JSON response with markdown-formatted AI analysis
+
+    Raises:
+        HTTPException: 404 if portfolio not found or not owned by user
+        HTTPException: 503 if OpenAI API is unavailable or not configured
+
+    Note:
+        Requires OPENAI_API_KEY to be configured in environment variables.
     """
     # Verify portfolio ownership
     result = await db.execute(

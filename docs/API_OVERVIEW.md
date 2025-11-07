@@ -41,12 +41,14 @@ This application follows **Clean Architecture** principles with clear separation
 - Automatic cost basis calculation
 - Performance metrics (P&L, returns)
 - Portfolio allocation tracking
+- Questrade account linking and auto-sync
 
 ### 3. Transaction Tracking
 - Buy/Sell/Dividend transactions
 - Automatic holdings synchronization
-- Transaction history
+- Transaction history with pagination
 - Cost basis updates using average cost method
+- Transaction deletion with holdings recalculation
 
 ### 4. Real-Time Stock Data
 - Yahoo Finance integration via yfinance
@@ -54,16 +56,33 @@ This application follows **Clean Architecture** principles with clear separation
 - Batch price fetching
 - Current price, volume, market cap, etc.
 
-### 5. WebSocket Support
+### 5. Questrade Integration
+- OAuth2 authentication flow
+- Automatic token refresh
+- Account position syncing
+- Dividend and distribution import
+- Multiple account support
+- Background sync with Celery
+
+### 6. AI-Powered Portfolio Analysis
+- OpenAI GPT-4o integration
+- Comprehensive portfolio analysis
+- Stock-specific insights and recommendations
+- Risk assessment
+- Diversification suggestions
+- Market sentiment analysis
+
+### 7. WebSocket Support
 - Real-time portfolio updates
 - Symbol-based subscriptions
 - Live price streaming
 - JWT authentication for WebSocket connections
 
-### 6. Background Tasks
+### 8. Background Tasks
 - Celery worker for async tasks
 - Periodic stock price refresh
 - Scheduled cache warming
+- Automatic Questrade token refresh
 - Celery Beat for task scheduling
 
 ## Data Models
@@ -85,6 +104,8 @@ This application follows **Clean Architecture** principles with clear separation
 - name: String
 - description: String (Optional)
 - user_id: Integer (Foreign Key)
+- questrade_account_id: String (Optional, links to Questrade account)
+- last_questrade_sync: DateTime (Optional, timestamp of last sync)
 - created_at: DateTime
 - updated_at: DateTime
 ```
@@ -123,11 +144,12 @@ This application follows **Clean Architecture** principles with clear separation
 - `GET /api/v1/auth/me` - Get current user info
 
 ### Portfolios
-- `GET /api/v1/portfolios` - List user's portfolios
+- `GET /api/v1/portfolios` - List user's portfolios with Questrade sync status
 - `POST /api/v1/portfolios` - Create new portfolio
 - `GET /api/v1/portfolios/{id}` - Get portfolio with real-time data
 - `PUT /api/v1/portfolios/{id}` - Update portfolio
 - `DELETE /api/v1/portfolios/{id}` - Delete portfolio
+- `POST /api/v1/portfolios/{id}/sync-questrade` - Sync Questrade-linked portfolio
 
 ### Transactions
 - `POST /api/v1/transactions` - Add transaction
@@ -142,7 +164,73 @@ This application follows **Clean Architecture** principles with clear separation
 ### WebSocket
 - `WS /api/v1/ws/portfolio/{id}` - Real-time portfolio updates
 
+### Questrade Integration
+- `GET /api/v1/questrade/status` - Get Questrade connection status
+- `GET /api/v1/questrade/authorize` - Initiate Questrade OAuth flow
+- `GET /api/v1/questrade/callback` - OAuth callback handler
+- `POST /api/v1/questrade/connect-with-token` - Connect using refresh token
+- `GET /api/v1/questrade/accounts` - List connected Questrade accounts
+- `GET /api/v1/questrade/positions/{account_id}` - Get positions for account
+- `GET /api/v1/questrade/balances/{account_id}` - Get account balances
+- `GET /api/v1/questrade/activities/{account_id}` - Get account activities
+- `POST /api/v1/questrade/sync/{portfolio_id}/{account_id}` - Sync to portfolio
+- `DELETE /api/v1/questrade/disconnect` - Disconnect Questrade account
+
+### AI Advisor
+- `POST /api/v1/ai/analyze/{portfolio_id}` - Get AI-powered portfolio analysis
+
 ## Business Logic
+
+### Questrade Integration Flow
+
+**1. Connection Setup:**
+```
+User initiates OAuth flow → Questrade authorization →
+Callback with auth code → Exchange for tokens →
+Store encrypted tokens in database
+```
+
+**2. Token Management:**
+- Access tokens expire after ~30 minutes
+- Refresh tokens used to obtain new access tokens
+- Celery background task refreshes tokens periodically
+- Tokens stored encrypted in database
+
+**3. Portfolio Sync:**
+```python
+1. Fetch positions from Questrade account
+2. Create BUY transactions for each position
+3. Check for duplicate transactions (skip if exists)
+4. Fetch dividends/distributions from last 365 days
+5. Create DIVIDEND transactions
+6. Update holdings table from all transactions
+7. Link portfolio to Questrade account
+8. Update last_sync timestamp
+```
+
+**4. Sync Features:**
+- Deduplication: Prevents importing same positions multiple times
+- Dividend Import: Last 365 days of dividends, distributions, interest
+- Multiple Transaction Types: DIV, DIVNRA, INT, MFD, DIST, ROC, CGD
+- Account Linking: Portfolios remember which account they're synced with
+- One-Click Re-sync: Sync button on portfolio page for linked portfolios
+
+### AI Portfolio Analysis
+
+**Input Data:**
+- Portfolio holdings with quantities and cost basis
+- Current market prices
+- Transaction history
+- Performance metrics (gains/losses)
+
+**Analysis Components:**
+1. **Portfolio Overview**: Composition and diversification
+2. **Individual Stock Analysis**: Performance and outlook for each holding
+3. **Risk Assessment**: Concentration risk, sector exposure
+4. **Recommendations**: Buy/sell/hold suggestions
+5. **Market Insights**: Relevant market trends and news
+
+**Model:** OpenAI GPT-4o-mini for cost-effective, fast responses
 
 ### Cost Basis Calculation
 The application uses the **Average Cost Method**:

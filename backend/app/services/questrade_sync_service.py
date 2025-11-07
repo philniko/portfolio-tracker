@@ -106,7 +106,11 @@ class QuestradeSyncService:
         # Update holdings table from transactions
         await self._update_holdings(db, portfolio_id)
 
-        # Update last sync time
+        # Update portfolio with Questrade sync info
+        portfolio.questrade_account_id = account_id
+        portfolio.last_questrade_sync = datetime.utcnow()
+
+        # Update last sync time on connection
         connection.last_sync_at = datetime.utcnow()
         await db.commit()
 

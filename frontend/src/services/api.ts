@@ -54,6 +54,9 @@ export const portfolioAPI = {
     api.put(`/portfolios/${id}`, data),
 
   delete: (id: number) => api.delete(`/portfolios/${id}`),
+
+  syncQuestrade: (portfolioId: number) =>
+    api.post(`/portfolios/${portfolioId}/sync-questrade`),
 };
 
 // Transaction API

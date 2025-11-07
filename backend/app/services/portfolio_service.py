@@ -85,6 +85,12 @@ class PortfolioService:
             portfolio_id
         )
 
+        # Get current holdings from database
+        portfolio = await self.portfolio_repo.get_by_id(portfolio_id, include_holdings=True)
+        current_symbols = {h.symbol for h in portfolio.holdings} if portfolio else set()
+        calculated_symbols = set(calculated_holdings.keys())
+
+        # Update or create holdings that exist in calculated
         for symbol, data in calculated_holdings.items():
             await self.portfolio_repo.update_holding(
                 portfolio_id=portfolio_id,
@@ -93,6 +99,11 @@ class PortfolioService:
                 average_cost=float(data["average_cost"]),
                 total_cost=float(data["total_cost"]),
             )
+
+        # Delete holdings that no longer exist (sold all shares)
+        symbols_to_delete = current_symbols - calculated_symbols
+        for symbol in symbols_to_delete:
+            await self.portfolio_repo.delete_holding(portfolio_id, symbol)
 
     async def get_portfolio_with_performance(
         self, portfolio_id: int, user_id: int
@@ -172,6 +183,8 @@ class PortfolioService:
             name=portfolio.name,
             description=portfolio.description,
             user_id=portfolio.user_id,
+            questrade_account_id=portfolio.questrade_account_id,
+            last_questrade_sync=portfolio.last_questrade_sync,
             created_at=portfolio.created_at,
             updated_at=portfolio.updated_at,
             holdings=holdings_response,

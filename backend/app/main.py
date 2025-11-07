@@ -22,7 +22,27 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title=settings.APP_NAME,
-    description="A production-grade portfolio tracker API with real-time stock data",
+    description="""
+A production-grade portfolio tracker API with real-time stock data, Questrade integration, and AI-powered analysis.
+
+## Features
+
+* **Portfolio Management**: Create and track multiple investment portfolios with real-time valuations
+* **Transaction Tracking**: Record buy/sell/dividend transactions with automatic cost basis calculation
+* **Real-Time Market Data**: Live stock prices via Yahoo Finance with Redis caching
+* **Questrade Integration**: OAuth2-based broker integration for automatic position and dividend syncing
+* **AI Portfolio Analysis**: GPT-4o-powered investment insights and recommendations
+* **WebSocket Support**: Real-time portfolio updates via WebSocket connections
+* **Secure Authentication**: JWT-based auth with bcrypt password hashing
+
+## Getting Started
+
+1. Register an account via `/api/v1/auth/register`
+2. Login to get your JWT token via `/api/v1/auth/login`
+3. Create a portfolio via `/api/v1/portfolios`
+4. Add transactions or connect Questrade to import positions
+5. Get AI-powered analysis via `/api/v1/ai/analyze/{portfolio_id}`
+    """,
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/api/docs",

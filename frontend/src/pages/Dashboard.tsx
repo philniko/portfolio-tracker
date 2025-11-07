@@ -144,25 +144,18 @@ export default function Dashboard() {
               )}
             </p>
             <p>Accounts: {questradeStatus.account_count}</p>
-            <div style={{ marginTop: '10px' }}>
+            <div className="flex gap-md mt-md">
               <Link
                 to="/questrade/positions"
-                style={{
-                  display: 'inline-block',
-                  padding: '10px 20px',
-                  backgroundColor: '#007bff',
-                  color: 'white',
-                  textDecoration: 'none',
-                  borderRadius: '4px',
-                  marginRight: '10px',
-                }}
+                className="btn btn-primary"
+                style={{ textDecoration: 'none' }}
               >
                 View Positions & Sync
               </Link>
               <button
                 onClick={() => disconnectQuestradeMutation.mutate()}
                 disabled={disconnectQuestradeMutation.isPending}
-                style={{ backgroundColor: '#dc3545' }}
+                className="btn-danger"
               >
                 {disconnectQuestradeMutation.isPending ? 'Disconnecting...' : 'Disconnect'}
               </button>
@@ -176,11 +169,11 @@ export default function Dashboard() {
               <div>
                 <button
                   onClick={() => setShowTokenInput(true)}
-                  style={{ backgroundColor: '#007bff', marginRight: '10px' }}
+                  className="btn-primary"
                 >
                   Connect with Refresh Token
                 </button>
-                <p style={{ marginTop: '15px', fontSize: '14px', color: '#666' }}>
+                <p className="text-sm text-secondary mt-md">
                   Get your refresh token from the{' '}
                   <a href="https://www.questrade.com/api" target="_blank" rel="noopener noreferrer">
                     Questrade API Portal
@@ -298,9 +291,21 @@ export default function Dashboard() {
                     display: 'block',
                   }}
                 >
-                  <h3>{portfolio.name}</h3>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <h3>{portfolio.name}</h3>
+                    {portfolio.questrade_account_id && (
+                      <span className="badge badge-success" style={{ fontSize: '12px' }}>
+                        🔗 Questrade
+                      </span>
+                    )}
+                  </div>
                   <p style={{ color: '#666' }}>{portfolio.description || 'No description'}</p>
                   <p style={{ marginTop: '10px', fontWeight: 'bold' }}>Holdings: {portfolio.holdings_count}</p>
+                  {portfolio.last_questrade_sync && (
+                    <p style={{ marginTop: '5px', fontSize: '12px', color: '#888' }}>
+                      Last synced: {new Date(portfolio.last_questrade_sync).toLocaleString()}
+                    </p>
+                  )}
                 </Link>
                 <button
                   onClick={(e) => handleDelete(e, portfolio.id, portfolio.name)}

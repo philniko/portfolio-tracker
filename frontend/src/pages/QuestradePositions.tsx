@@ -80,29 +80,26 @@ export default function QuestradePositions() {
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <Link to="/dashboard" style={{ marginBottom: '20px', display: 'inline-block' }}>
+    <div className="container">
+      <Link to="/dashboard" className="mb-lg" style={{ display: 'inline-block' }}>
         ← Back to Dashboard
       </Link>
 
-      <h1>Questrade Positions</h1>
+      <div className="page-header">
+        <h1 className="page-title">Questrade Positions</h1>
+        <p className="page-subtitle">View and sync your Questrade account positions</p>
+      </div>
 
       {syncMessage && (
-        <div style={{
-          padding: '15px',
-          marginBottom: '20px',
-          backgroundColor: syncMessage.includes('Success') ? '#d4edda' : '#f8d7da',
-          color: syncMessage.includes('Success') ? '#155724' : '#721c24',
-          borderRadius: '8px',
-        }}>
+        <div className={syncMessage.includes('Success') ? 'alert alert-success' : 'alert alert-error'}>
           {syncMessage}
         </div>
       )}
 
-      <div style={{ marginBottom: '30px' }}>
-        <h2>Select Account</h2>
+      <div className="mb-xl">
+        <h2 className="text-xl font-semibold mb-md">Select Account</h2>
         {accountsError && (
-          <div style={{ padding: '15px', marginBottom: '20px', backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '8px' }}>
+          <div className="alert alert-error">
             <strong>Questrade Connection Expired</strong>
             <p style={{ marginTop: '10px', marginBottom: '10px' }}>
               Your Questrade access token has expired. Questrade tokens expire after 30 minutes.
@@ -111,29 +108,28 @@ export default function QuestradePositions() {
               To reconnect:
             </p>
             <ol style={{ marginLeft: '20px', marginBottom: '10px' }}>
-              <li>Go back to the <Link to="/dashboard" style={{ color: '#721c24', fontWeight: 'bold' }}>Dashboard</Link></li>
+              <li>Go back to the <Link to="/dashboard">Dashboard</Link></li>
               <li>Click "Disconnect" in the Questrade section</li>
-              <li>Get a new refresh token from <a href="https://www.questrade.com/api" target="_blank" rel="noopener noreferrer" style={{ color: '#721c24', fontWeight: 'bold' }}>Questrade API Portal</a></li>
+              <li>Get a new refresh token from <a href="https://www.questrade.com/api" target="_blank" rel="noopener noreferrer">Questrade API Portal</a></li>
               <li>Click "Connect with Refresh Token" and enter your new token</li>
             </ol>
           </div>
         )}
-        <div style={{ display: 'grid', gap: '15px', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))' }}>
+        <div className="grid grid-auto gap-lg">
           {accounts?.map((account: any) => (
             <div
               key={account.number}
               onClick={() => setSelectedAccount(account.number)}
+              className="card"
               style={{
-                padding: '15px',
-                border: selectedAccount === account.number ? '2px solid #007bff' : '1px solid #ddd',
-                borderRadius: '8px',
                 cursor: 'pointer',
-                backgroundColor: selectedAccount === account.number ? '#e7f3ff' : '#fff',
+                border: selectedAccount === account.number ? '2px solid var(--primary)' : '1px solid var(--border-color)',
+                background: selectedAccount === account.number ? 'linear-gradient(135deg, #e0e7ff 0%, #f5f3ff 100%)' : 'var(--bg-primary)',
               }}
             >
-              <div style={{ fontWeight: 'bold' }}>{account.type}</div>
-              <div style={{ fontSize: '14px', color: '#666' }}>Account: {account.number}</div>
-              <div style={{ fontSize: '12px', color: '#28a745', marginTop: '5px' }}>{account.status}</div>
+              <div className="font-bold text-lg">{account.type}</div>
+              <div className="text-sm text-secondary">Account: {account.number}</div>
+              <div className="badge badge-success mt-sm">{account.status}</div>
             </div>
           ))}
         </div>
@@ -142,69 +138,75 @@ export default function QuestradePositions() {
       {selectedAccount && (
         <>
           {balancesError && (
-            <div style={{ padding: '15px', marginBottom: '20px', backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '8px' }}>
+            <div className="alert alert-error">
               Error loading balances: {(balancesError as any)?.message || 'Unknown error'}
             </div>
           )}
           {positionsError && (
-            <div style={{ padding: '15px', marginBottom: '20px', backgroundColor: '#f8d7da', color: '#721c24', borderRadius: '8px' }}>
+            <div className="alert alert-error">
               Error loading positions: {(positionsError as any)?.message || 'Unknown error'}
             </div>
           )}
           {balances && balances.length > 0 && (
-            <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#e7f3ff', borderRadius: '8px' }}>
-              <h3 style={{ marginTop: 0 }}>Account Balances</h3>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '15px' }}>
+            <div className="card mb-lg" style={{ background: 'linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%)' }}>
+              <h3 className="card-header">Account Balances</h3>
+              <div className="grid grid-auto gap-md">
                 {balances.map((balance: any, index: number) => (
-                  <div key={index} style={{ padding: '10px', backgroundColor: 'white', borderRadius: '4px', border: '1px solid #ddd' }}>
-                    <div style={{ fontSize: '12px', color: '#666', marginBottom: '5px' }}>{balance.currency}</div>
-                    <div style={{ fontSize: '14px', fontWeight: 'bold' }}>Cash: ${balance.cash.toFixed(2)}</div>
-                    <div style={{ fontSize: '14px' }}>Market Value: ${balance.marketValue.toFixed(2)}</div>
-                    <div style={{ fontSize: '16px', fontWeight: 'bold', marginTop: '5px', color: '#007bff' }}>
-                      Total Equity: ${balance.totalEquity.toFixed(2)}
+                  <div key={index} className="stats-card">
+                    <div className="stats-label">{balance.currency}</div>
+                    <div className="text-base mb-sm">Cash: ${balance.cash.toFixed(2)}</div>
+                    <div className="text-base mb-sm">Market Value: ${balance.marketValue.toFixed(2)}</div>
+                    <div className="stats-value text-primary">
+                      ${balance.totalEquity.toFixed(2)}
                     </div>
+                    <div className="text-sm text-secondary">Total Equity</div>
                   </div>
                 ))}
               </div>
             </div>
           )}
 
-          <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f9f9f9', borderRadius: '8px' }}>
-            <h3>Sync to Portfolio</h3>
-            <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
-              <select
-                value={selectedPortfolio || ''}
-                onChange={(e) => setSelectedPortfolio(Number(e.target.value))}
-                style={{ padding: '8px', flex: 1, maxWidth: '300px' }}
-              >
-                <option value="">Select a portfolio...</option>
-                {portfolios?.map((portfolio: any) => (
-                  <option key={portfolio.id} value={portfolio.id}>
-                    {portfolio.name}
-                  </option>
-                ))}
-              </select>
+          <div className="card mb-lg">
+            <h3 className="card-header">Sync to Portfolio</h3>
+            <div className="flex gap-md" style={{ alignItems: 'flex-start', flexWrap: 'wrap' }}>
+              <div style={{ flex: 1, minWidth: '250px' }}>
+                <label>Select Portfolio</label>
+                <select
+                  value={selectedPortfolio || ''}
+                  onChange={(e) => setSelectedPortfolio(Number(e.target.value))}
+                >
+                  <option value="">Select a portfolio...</option>
+                  {portfolios?.map((portfolio: any) => (
+                    <option key={portfolio.id} value={portfolio.id}>
+                      {portfolio.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <button
                 onClick={handleSync}
                 disabled={!selectedPortfolio || syncMutation.isPending}
-                style={{ backgroundColor: '#28a745', padding: '8px 20px' }}
+                className="btn-success"
+                style={{ marginTop: '24px' }}
               >
                 {syncMutation.isPending ? 'Syncing...' : 'Sync Positions'}
               </button>
             </div>
-            <p style={{ fontSize: '14px', color: '#666', marginTop: '10px' }}>
+            <p className="text-sm text-secondary mt-md">
               This will import all positions from this Questrade account into the selected portfolio.
             </p>
-            <p style={{ fontSize: '13px', color: '#856404', marginTop: '5px', backgroundColor: '#fff3cd', padding: '8px', borderRadius: '4px' }}>
+            <div className="alert alert-warning mt-sm">
               ⚠️ Note: Dividends, ETF distributions, interest, and other income transactions are only synced for the last 365 days.
-            </p>
+            </div>
           </div>
 
-          <h2>Positions in Account {selectedAccount}</h2>
+          <h2 className="text-xl font-semibold mb-md">Positions in Account {selectedAccount}</h2>
           {positionsLoading ? (
-            <p>Loading positions...</p>
+            <div className="flex-center" style={{ padding: '40px' }}>
+              <div className="spinner"></div>
+            </div>
           ) : positions && positions.length > 0 ? (
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px' }}>
+            <table>
               <thead>
                 <tr style={{ borderBottom: '2px solid #ddd', backgroundColor: '#f5f5f5' }}>
                   <th style={{ padding: '10px', textAlign: 'left' }}>Symbol</th>

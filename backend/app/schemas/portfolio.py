@@ -46,6 +46,8 @@ class PortfolioResponse(PortfolioBase):
 
     id: int
     user_id: int
+    questrade_account_id: str | None = None
+    last_questrade_sync: datetime | None = None
     created_at: datetime
     updated_at: datetime | None
     holdings: List[HoldingResponse] = []
@@ -63,6 +65,8 @@ class PortfolioSummary(BaseModel):
     id: int
     name: str
     description: str | None
+    questrade_account_id: str | None = None
+    last_questrade_sync: datetime | None = None
     holdings_count: int
     total_value: Decimal | None = None
     total_cost: Decimal | None = None
