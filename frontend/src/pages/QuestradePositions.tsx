@@ -1,11 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { useAuth } from '../hooks/useAuth';
 import { questradeAPI, portfolioAPI } from '../services/api';
 import { Link } from 'react-router-dom';
 import { useState } from 'react';
 
 export default function QuestradePositions() {
-  const { user } = useAuth();
   const [selectedPortfolio, setSelectedPortfolio] = useState<number | null>(null);
   const [selectedAccount, setSelectedAccount] = useState<string | null>(null);
   const [syncMessage, setSyncMessage] = useState('');

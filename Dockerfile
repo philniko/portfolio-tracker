@@ -19,6 +19,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/app ./app
 COPY backend/alembic ./alembic
 COPY backend/alembic.ini .
+COPY backend/start.sh .
+
+# Make start script executable
+RUN chmod +x start.sh
 
 # Create non-root user
 RUN useradd -m -u 1000 appuser && chown -R appuser:appuser /app
@@ -27,5 +31,5 @@ USER appuser
 # Expose port
 EXPOSE 8000
 
-# Run the application
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application with migrations
+CMD ["./start.sh"]
