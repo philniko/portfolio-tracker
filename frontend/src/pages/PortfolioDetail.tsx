@@ -92,17 +92,6 @@ export default function PortfolioDetail() {
     },
   });
 
-  const syncHoldingsMutation = useMutation({
-    mutationFn: () => portfolioAPI.syncHoldings(portfolioId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
-      queryClient.invalidateQueries({ queryKey: ['transactions', portfolioId] });
-    },
-    onError: (err: any) => {
-      alert(err.response?.data?.detail || 'Failed to sync holdings');
-    },
-  });
-
   const updateCashMutation = useMutation({
     mutationFn: (data: { cash_balance_cad: number; cash_balance_usd: number }) =>
       portfolioAPI.update(portfolioId, data),

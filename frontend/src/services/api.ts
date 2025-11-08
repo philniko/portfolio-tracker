@@ -50,7 +50,7 @@ export const portfolioAPI = {
   create: (data: { name: string; description?: string }) =>
     api.post('/portfolios', data),
 
-  update: (id: number, data: { name?: string; description?: string }) =>
+  update: (id: number, data: { name?: string; description?: string; cash_balance_cad?: number; cash_balance_usd?: number }) =>
     api.put(`/portfolios/${id}`, data),
 
   delete: (id: number) => api.delete(`/portfolios/${id}`),
