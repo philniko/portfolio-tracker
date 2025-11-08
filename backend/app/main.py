@@ -30,7 +30,7 @@ A production-grade portfolio tracker API with real-time stock data, Questrade in
 * **Portfolio Management**: Create and track multiple investment portfolios with real-time valuations
 * **Transaction Tracking**: Record buy/sell/dividend transactions with automatic cost basis calculation
 * **Real-Time Market Data**: Live stock prices via Yahoo Finance with Redis caching
-* **Questrade Integration**: OAuth2-based broker integration for automatic position and dividend syncing
+* **Questrade Integration**: Brokerage integration for automatic position and dividend syncing
 * **AI Portfolio Analysis**: GPT-4o-powered investment insights and recommendations
 * **WebSocket Support**: Real-time portfolio updates via WebSocket connections
 * **Secure Authentication**: JWT-based auth with bcrypt password hashing

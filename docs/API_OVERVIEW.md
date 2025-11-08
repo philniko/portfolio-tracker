@@ -57,12 +57,12 @@ This application follows **Clean Architecture** principles with clear separation
 - Current price, volume, market cap, etc.
 
 ### 5. Questrade Integration
-- OAuth2 authentication flow
-- Automatic token refresh
+- User-provided refresh token authentication
+- Automatic token refresh via Celery
 - Account position syncing
 - Dividend and distribution import
-- Multiple account support
-- Background sync with Celery
+- Multiple account support per user
+- Background sync with Celery tasks
 
 ### 6. AI-Powered Portfolio Analysis
 - OpenAI GPT-4o integration
@@ -166,14 +166,13 @@ This application follows **Clean Architecture** principles with clear separation
 
 ### Questrade Integration
 - `GET /api/v1/questrade/status` - Get Questrade connection status
-- `GET /api/v1/questrade/authorize` - Initiate Questrade OAuth flow
-- `GET /api/v1/questrade/callback` - OAuth callback handler
-- `POST /api/v1/questrade/connect-with-token` - Connect using refresh token
+- `POST /api/v1/questrade/connect-with-token` - Connect using user's refresh token
+- `POST /api/v1/questrade/refresh-accounts` - Manually refresh account list
 - `GET /api/v1/questrade/accounts` - List connected Questrade accounts
 - `GET /api/v1/questrade/positions/{account_id}` - Get positions for account
 - `GET /api/v1/questrade/balances/{account_id}` - Get account balances
 - `GET /api/v1/questrade/activities/{account_id}` - Get account activities
-- `POST /api/v1/questrade/sync/{portfolio_id}/{account_id}` - Sync to portfolio
+- `POST /api/v1/questrade/sync/{portfolio_id}/{account_id}` - Sync account to portfolio
 - `DELETE /api/v1/questrade/disconnect` - Disconnect Questrade account
 
 ### AI Advisor
@@ -185,16 +184,17 @@ This application follows **Clean Architecture** principles with clear separation
 
 **1. Connection Setup:**
 ```
-User initiates OAuth flow → Questrade authorization →
-Callback with auth code → Exchange for tokens →
-Store encrypted tokens in database
+User obtains refresh token from Questrade API Portal →
+User enters token in application →
+Exchange for access token and API server URL →
+Store tokens in database (per-user)
 ```
 
 **2. Token Management:**
 - Access tokens expire after ~30 minutes
-- Refresh tokens used to obtain new access tokens
-- Celery background task refreshes tokens periodically
-- Tokens stored encrypted in database
+- Refresh tokens used to obtain new access tokens automatically
+- Celery background task refreshes tokens periodically (before expiry)
+- Each user has their own Questrade connection (tokens not shared)
 
 **3. Portfolio Sync:**
 ```python

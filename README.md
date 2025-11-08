@@ -11,6 +11,8 @@ A production-grade, full-stack portfolio tracking application built with FastAPI
 - **Cost Basis Calculation**: Automatic calculation using average cost method
 - **Performance Metrics**: Real-time P&L, returns, and allocation tracking
 - **Multi-User Support**: JWT-based authentication and user management
+- **Questrade Integration**: Automatic portfolio syncing with Questrade brokerage accounts
+- **AI-Powered Analysis**: GPT-4o-mini portfolio insights and investment recommendations
 
 ### Advanced Features
 - **Clean Architecture**: Separation of concerns with repository pattern
@@ -32,6 +34,8 @@ A production-grade, full-stack portfolio tracking application built with FastAPI
 - **Redis**: Caching and message broker
 - **Celery**: Distributed task queue for background jobs
 - **yfinance**: Real-time stock market data
+- **OpenAI GPT-4o-mini**: AI-powered portfolio analysis
+- **Questrade API**: Brokerage account integration
 - **JWT**: Secure authentication
 - **pytest**: Testing framework
 
@@ -469,9 +473,10 @@ MIT License - feel free to use this project for learning and portfolio purposes.
 
 ## Future Enhancements
 
+- [x] ~~Add dividend tracking and reinvestment calculations~~ (Completed via Questrade integration)
+- [x] ~~AI-powered portfolio analysis~~ (Completed with OpenAI GPT-4o-mini)
 - [ ] Add more stock data providers (Alpha Vantage, IEX Cloud)
 - [ ] Implement portfolio rebalancing recommendations
-- [ ] Add dividend tracking and reinvestment calculations
 - [ ] Create mobile app (React Native)
 - [ ] Add data visualization (charts, graphs)
 - [ ] Implement tax lot tracking (FIFO, LIFO, specific ID)
