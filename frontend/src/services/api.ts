@@ -90,11 +90,6 @@ export const stockAPI = {
 export const questradeAPI = {
   getStatus: () => api.get('/questrade/status'),
 
-  authorize: () => {
-    // Redirect to backend OAuth endpoint
-    window.location.href = `${API_BASE_URL}/questrade/authorize`;
-  },
-
   connectWithToken: (refreshToken: string) =>
     api.post('/questrade/connect-with-token', { refresh_token: refreshToken }),
 

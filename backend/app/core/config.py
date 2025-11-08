@@ -51,11 +51,8 @@ class Settings(BaseSettings):
     # Stock API
     ALPHA_VANTAGE_API_KEY: str | None = None
 
-    # Questrade API
-    QUESTRADE_CLIENT_ID: str = ""
-    QUESTRADE_CLIENT_SECRET: str = ""
-    QUESTRADE_REFRESH_TOKEN: str = ""
-    QUESTRADE_REDIRECT_URI: str = "http://localhost:8000/api/v1/questrade/callback"
+    # OpenAI API
+    OPENAI_API_KEY: str | None = None
 
     # Celery
     CELERY_BROKER_URL: str = "redis://localhost:6379/1"

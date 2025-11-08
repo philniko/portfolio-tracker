@@ -1,9 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Query, Body
-from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List
 import requests
-from urllib.parse import urlencode
 
 from app.api.dependencies import get_current_active_user, get_db
 from app.models.user import User
@@ -17,7 +15,6 @@ from app.schemas.questrade import (
     QuestradeBalance,
     QuestradeActivity,
 )
-from app.core.config import settings
 
 router = APIRouter()
 
@@ -70,69 +67,6 @@ async def connect_with_refresh_token(
         raise HTTPException(
             status_code=400,
             detail=f"Failed to connect with refresh token: {str(e)}",
-        )
-
-
-@router.get("/authorize")
-async def authorize_questrade(
-    current_user: User = Depends(get_current_active_user),
-):
-    """
-    Initiate Questrade OAuth flow.
-
-    Redirects user to Questrade login page for authorization.
-    """
-    # Build authorization URL
-    params = {
-        "client_id": settings.QUESTRADE_CLIENT_ID,
-        "response_type": "code",
-        "redirect_uri": settings.QUESTRADE_REDIRECT_URI,
-    }
-
-    auth_url = f"https://login.questrade.com/oauth2/authorize?{urlencode(params)}"
-    return RedirectResponse(url=auth_url)
-
-
-@router.get("/callback")
-async def questrade_callback(
-    code: str = Query(...),
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user),
-):
-    """
-    Handle Questrade OAuth callback.
-
-    Exchanges authorization code for access token and saves connection.
-    """
-    try:
-        # Exchange code for access token
-        token_url = "https://login.questrade.com/oauth2/token"
-        params = {
-            "client_id": settings.QUESTRADE_CLIENT_ID,
-            "code": code,
-            "grant_type": "authorization_code",
-            "redirect_uri": settings.QUESTRADE_REDIRECT_URI,
-        }
-
-        response = requests.get(token_url, params=params, timeout=10)
-        response.raise_for_status()
-
-        # Parse token response
-        token_data = response.json()
-        auth_response = QuestradeAuthResponse(**token_data)
-
-        # Save connection
-        await questrade_service.save_connection(db, current_user.id, auth_response)
-
-        # Redirect to dashboard with success message
-        return RedirectResponse(
-            url=f"{settings.FRONTEND_URL}/dashboard?questrade_connected=true"
-        )
-
-    except Exception as e:
-        # Redirect to dashboard with error
-        return RedirectResponse(
-            url=f"{settings.FRONTEND_URL}/dashboard?questrade_error=true"
         )
 
 

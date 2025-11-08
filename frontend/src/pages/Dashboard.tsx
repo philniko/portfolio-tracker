@@ -182,6 +182,37 @@ export default function Dashboard() {
               </div>
             ) : (
               <div style={{ marginTop: '15px' }}>
+                <div className="alert alert-info" style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#e7f3ff', border: '1px solid #b3d9ff', borderRadius: '5px' }}>
+                  <h4 style={{ marginTop: 0, marginBottom: '10px' }}>📋 How to Get Your Questrade Refresh Token:</h4>
+                  <ol style={{ marginLeft: '20px', marginBottom: '10px' }}>
+                    <li style={{ marginBottom: '8px' }}>
+                      Log in to your Questrade account at{' '}
+                      <a href="https://www.questrade.com" target="_blank" rel="noopener noreferrer">
+                        questrade.com
+                      </a>
+                    </li>
+                    <li style={{ marginBottom: '8px' }}>
+                      Go to the{' '}
+                      <a href="https://www.questrade.com/api" target="_blank" rel="noopener noreferrer">
+                        Questrade API Portal
+                      </a>
+                    </li>
+                    <li style={{ marginBottom: '8px' }}>
+                      Click <strong>"Generate Refresh Token"</strong>
+                    </li>
+                    <li style={{ marginBottom: '8px' }}>
+                      Copy the refresh token (starts with a long string of letters and numbers)
+                    </li>
+                    <li style={{ marginBottom: '8px' }}>
+                      Paste it in the field below
+                    </li>
+                  </ol>
+                  <p style={{ marginBottom: 0, fontSize: '14px', color: '#666' }}>
+                    <strong>Note:</strong> Your refresh token is stored securely and is only used to access your Questrade data.
+                    Each user connects their own Questrade account - tokens are not shared.
+                  </p>
+                </div>
+
                 <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
                   Enter Refresh Token:
                 </label>
@@ -189,8 +220,8 @@ export default function Dashboard() {
                   type="text"
                   value={refreshToken}
                   onChange={(e) => setRefreshToken(e.target.value)}
-                  placeholder="Paste your Questrade refresh token"
-                  style={{ width: '100%', padding: '8px', marginBottom: '10px', maxWidth: '500px' }}
+                  placeholder="Paste your Questrade refresh token here..."
+                  style={{ width: '100%', padding: '10px', marginBottom: '10px', maxWidth: '600px', fontFamily: 'monospace', fontSize: '13px' }}
                 />
                 <div>
                   <button
