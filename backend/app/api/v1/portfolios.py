@@ -87,6 +87,8 @@ async def create_portfolio(
         name=portfolio.name,
         description=portfolio.description,
         user_id=portfolio.user_id,
+        cash_balance_cad=portfolio.cash_balance_cad,
+        cash_balance_usd=portfolio.cash_balance_usd,
         created_at=portfolio.created_at,
         updated_at=portfolio.updated_at,
         holdings=[],
@@ -94,6 +96,7 @@ async def create_portfolio(
         total_cost=None,
         total_gain_loss=None,
         total_gain_loss_percent=None,
+        total_value_with_cash=None,
     )
 
 
@@ -161,6 +164,10 @@ async def update_portfolio(
         portfolio.name = portfolio_data.name
     if portfolio_data.description is not None:
         portfolio.description = portfolio_data.description
+    if portfolio_data.cash_balance_cad is not None:
+        portfolio.cash_balance_cad = portfolio_data.cash_balance_cad
+    if portfolio_data.cash_balance_usd is not None:
+        portfolio.cash_balance_usd = portfolio_data.cash_balance_usd
 
     await portfolio_repo.update(portfolio)
 
@@ -200,6 +207,47 @@ async def delete_portfolio(
 
     await portfolio_repo.delete(portfolio)
 
+
+
+@router.post("/{portfolio_id}/sync-holdings")
+async def sync_holdings(
+    portfolio_id: int,
+    current_user: User = Depends(get_current_active_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Manually sync holdings for a portfolio.
+
+    This recalculates all holdings from transactions and updates currency
+    information from real-time stock data.
+
+    Args:
+        portfolio_id: Portfolio ID to sync
+        current_user: Current authenticated user
+        db: Database session
+
+    Returns:
+        Success message
+
+    Raises:
+        NotFoundException: If portfolio not found
+        ForbiddenException: If portfolio not owned by user
+    """
+    portfolio_repo = PortfolioRepository(db)
+    portfolio = await portfolio_repo.get_by_id(portfolio_id)
+
+    if not portfolio:
+        raise NotFoundException("Portfolio not found")
+
+    if portfolio.user_id != current_user.id:
+        raise ForbiddenException("Not authorized to access this portfolio")
+
+    # Sync holdings
+    transaction_repo = TransactionRepository(db)
+    portfolio_service = PortfolioService(portfolio_repo, transaction_repo)
+    await portfolio_service.sync_holdings(portfolio_id)
+
+    return {"message": "Holdings synced successfully"}
 
 
 @router.post("/{portfolio_id}/sync-questrade")

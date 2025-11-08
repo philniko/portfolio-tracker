@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Numeric
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Numeric, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.session import Base
+from app.models.transaction import Currency
 
 
 class Portfolio(Base):
@@ -13,6 +14,9 @@ class Portfolio(Base):
     name = Column(String, nullable=False)
     description = Column(String, nullable=True)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    cash_balance_cad = Column(Numeric(precision=18, scale=2), nullable=False, default=0)  # Cash in CAD
+    cash_balance_usd = Column(Numeric(precision=18, scale=2), nullable=False, default=0)  # Cash in USD
+    questrade_forex_rate = Column(Numeric(precision=10, scale=6), nullable=True)  # USD/CAD rate from Questrade
     questrade_account_id = Column(String, nullable=True)  # Linked Questrade account
     last_questrade_sync = Column(DateTime(timezone=True), nullable=True)  # Last sync timestamp
     created_at = Column(DateTime(timezone=True), server_default=func.now())
@@ -37,6 +41,7 @@ class Holding(Base):
     symbol = Column(String, nullable=False, index=True)
     quantity = Column(Numeric(precision=18, scale=8), nullable=False, default=0)
     average_cost = Column(Numeric(precision=18, scale=2), nullable=False, default=0)  # Average cost per share
+    currency = Column(SQLEnum(Currency), nullable=False, default=Currency.CAD)  # Currency of the holding
     total_cost = Column(Numeric(precision=18, scale=2), nullable=False, default=0)  # Total amount invested
     updated_at = Column(DateTime(timezone=True), onupdate=func.now(), server_default=func.now())
 

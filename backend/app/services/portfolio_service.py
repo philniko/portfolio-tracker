@@ -1,10 +1,11 @@
 from decimal import Decimal
 from typing import List, Dict
 from app.models.portfolio import Portfolio, Holding
-from app.models.transaction import Transaction, TransactionType
+from app.models.transaction import Transaction, TransactionType, Currency
 from app.repositories.portfolio_repository import PortfolioRepository
 from app.repositories.transaction_repository import TransactionRepository
 from app.services.stock_service import stock_service
+from app.services.currency_service import currency_service
 from app.schemas.portfolio import HoldingResponse, PortfolioResponse
 from app.core.exceptions import NotFoundException
 
@@ -27,7 +28,7 @@ class PortfolioService:
         Calculate current holdings and cost basis from all transactions.
 
         Returns:
-            Dictionary mapping symbol to {quantity, average_cost, total_cost}
+            Dictionary mapping symbol to {quantity, average_cost, total_cost, currency}
         """
         transactions = await self.transaction_repo.get_by_portfolio_id(portfolio_id)
         holdings: Dict[str, Dict[str, Decimal]] = {}
@@ -40,6 +41,7 @@ class PortfolioService:
                     "quantity": Decimal("0"),
                     "total_cost": Decimal("0"),
                     "average_cost": Decimal("0"),
+                    "currency": txn.currency,  # Track currency for each holding
                 }
 
             if txn.transaction_type == TransactionType.BUY:
@@ -80,6 +82,7 @@ class PortfolioService:
     async def sync_holdings(self, portfolio_id: int) -> None:
         """
         Synchronize holdings table with calculated values from transactions.
+        Also updates currency from real-time stock data.
         """
         calculated_holdings = await self.calculate_holdings_from_transactions(
             portfolio_id
@@ -90,14 +93,24 @@ class PortfolioService:
         current_symbols = {h.symbol for h in portfolio.holdings} if portfolio else set()
         calculated_symbols = set(calculated_holdings.keys())
 
+        # Fetch current prices to get accurate currency information
+        symbols = list(calculated_holdings.keys())
+        prices = await stock_service.get_multiple_stock_prices(symbols)
+
         # Update or create holdings that exist in calculated
         for symbol, data in calculated_holdings.items():
+            # Get actual currency from stock data if available
+            currency = data["currency"]
+            if symbol in prices:
+                currency = prices[symbol].currency
+
             await self.portfolio_repo.update_holding(
                 portfolio_id=portfolio_id,
                 symbol=symbol,
                 quantity=float(data["quantity"]),
                 average_cost=float(data["average_cost"]),
                 total_cost=float(data["total_cost"]),
+                currency=currency,
             )
 
         # Delete holdings that no longer exist (sold all shares)
@@ -134,19 +147,39 @@ class PortfolioService:
 
         # Calculate metrics for each holding
         holdings_response: List[HoldingResponse] = []
-        total_value = Decimal("0")
-        total_cost = Decimal("0")
+        total_value_cad = Decimal("0")
+        total_cost_cad = Decimal("0")
 
         for holding in portfolio.holdings:
             current_price = None
             current_value = None
+            current_value_cad = None
             unrealized_gain_loss = None
             unrealized_gain_loss_percent = None
 
             if holding.symbol in prices:
                 price_data = prices[holding.symbol]
                 current_price = price_data.current_price
+                holding_currency = price_data.currency
+
+                # Calculate current value in holding's currency
                 current_value = Decimal(str(holding.quantity)) * current_price
+
+                # Convert to CAD for portfolio totals
+                # Use Questrade's forex rate if available, otherwise use real-time rate
+                if holding_currency == Currency.USD and portfolio.questrade_forex_rate:
+                    forex_rate = Decimal(str(portfolio.questrade_forex_rate))
+                    current_value_cad = current_value * forex_rate
+                    total_cost_in_cad = Decimal(str(holding.total_cost)) * forex_rate
+                else:
+                    current_value_cad = await currency_service.convert_amount(
+                        current_value, holding_currency, Currency.CAD
+                    )
+                    total_cost_in_cad = await currency_service.convert_amount(
+                        Decimal(str(holding.total_cost)), holding.currency, Currency.CAD
+                    )
+
+                # Calculate unrealized gain/loss in holding's currency
                 unrealized_gain_loss = current_value - Decimal(str(holding.total_cost))
                 unrealized_gain_loss_percent = (
                     (unrealized_gain_loss / Decimal(str(holding.total_cost)) * 100)
@@ -154,8 +187,8 @@ class PortfolioService:
                     else Decimal("0")
                 )
 
-                total_value += current_value
-                total_cost += Decimal(str(holding.total_cost))
+                total_value_cad += current_value_cad
+                total_cost_cad += total_cost_in_cad
 
             holdings_response.append(
                 HoldingResponse(
@@ -164,6 +197,7 @@ class PortfolioService:
                     quantity=holding.quantity,
                     average_cost=holding.average_cost,
                     total_cost=holding.total_cost,
+                    currency=holding.currency,
                     current_price=current_price,
                     current_value=current_value,
                     unrealized_gain_loss=unrealized_gain_loss,
@@ -172,24 +206,39 @@ class PortfolioService:
                 )
             )
 
-        # Calculate portfolio-level metrics
-        total_gain_loss = total_value - total_cost if total_value and total_cost else None
+        # Calculate portfolio-level metrics (all in CAD)
+        total_gain_loss = total_value_cad - total_cost_cad if total_value_cad and total_cost_cad else None
         total_gain_loss_percent = (
-            (total_gain_loss / total_cost * 100) if total_gain_loss and total_cost > 0 else None
+            (total_gain_loss / total_cost_cad * 100) if total_gain_loss and total_cost_cad > 0 else None
         )
+
+        # Convert USD cash to CAD and add to total value
+        # Use Questrade's forex rate if available for consistency
+        cash_cad = Decimal(str(portfolio.cash_balance_cad))
+        cash_usd = Decimal(str(portfolio.cash_balance_usd))
+        if portfolio.questrade_forex_rate:
+            forex_rate = Decimal(str(portfolio.questrade_forex_rate))
+            cash_usd_in_cad = cash_usd * forex_rate
+        else:
+            cash_usd_in_cad = await currency_service.convert_amount(cash_usd, Currency.USD, Currency.CAD)
+        total_cash_cad = cash_cad + cash_usd_in_cad
+        total_value_with_cash = total_value_cad + total_cash_cad
 
         return PortfolioResponse(
             id=portfolio.id,
             name=portfolio.name,
             description=portfolio.description,
             user_id=portfolio.user_id,
+            cash_balance_cad=portfolio.cash_balance_cad,
+            cash_balance_usd=portfolio.cash_balance_usd,
             questrade_account_id=portfolio.questrade_account_id,
             last_questrade_sync=portfolio.last_questrade_sync,
             created_at=portfolio.created_at,
             updated_at=portfolio.updated_at,
             holdings=holdings_response,
-            total_value=total_value,
-            total_cost=total_cost,
+            total_value=total_value_cad,
+            total_cost=total_cost_cad,
             total_gain_loss=total_gain_loss,
             total_gain_loss_percent=total_gain_loss_percent,
+            total_value_with_cash=total_value_with_cash,
         )

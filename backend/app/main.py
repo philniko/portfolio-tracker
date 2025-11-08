@@ -28,9 +28,12 @@ A production-grade portfolio tracker API with real-time stock data, Questrade in
 ## Features
 
 * **Portfolio Management**: Create and track multiple investment portfolios with real-time valuations
+* **Multi-Currency Support**: Track USD and CAD stocks with automatic currency detection and conversion
+* **Cash Balance Tracking**: Monitor cash balances (CAD/USD) with automatic Questrade sync
 * **Transaction Tracking**: Record buy/sell/dividend transactions with automatic cost basis calculation
 * **Real-Time Market Data**: Live stock prices via Yahoo Finance with Redis caching
-* **Questrade Integration**: Brokerage integration for automatic position and dividend syncing
+* **Questrade Integration**: Brokerage integration for automatic position, dividend, and cash balance syncing
+* **Accurate Forex Rates**: Uses Questrade's exact USD/CAD exchange rate for perfect balance matching
 * **AI Portfolio Analysis**: GPT-4o-powered investment insights and recommendations
 * **WebSocket Support**: Real-time portfolio updates via WebSocket connections
 * **Secure Authentication**: JWT-based auth with bcrypt password hashing
@@ -42,6 +45,10 @@ A production-grade portfolio tracker API with real-time stock data, Questrade in
 3. Create a portfolio via `/api/v1/portfolios`
 4. Add transactions or connect Questrade to import positions
 5. Get AI-powered analysis via `/api/v1/ai/analyze/{portfolio_id}`
+
+## Currency Support
+
+All transactions and holdings support CAD and USD currencies. Portfolio totals are displayed in CAD with automatic currency conversion. When syncing from Questrade, the exact exchange rate used by Questrade is stored and applied to ensure perfect balance matching.
     """,
     version="1.0.0",
     lifespan=lifespan,

@@ -186,8 +186,8 @@ class QuestradeService:
 
     async def get_balances(
         self, db: AsyncSession, connection: QuestradeConnection, account_id: str
-    ) -> List[QuestradeBalance]:
-        """Get account balances."""
+    ) -> tuple[List[QuestradeBalance], dict]:
+        """Get account balances and full response data (includes forex rates)."""
         connection = await self.ensure_valid_token(db, connection)
 
         try:
@@ -197,7 +197,7 @@ class QuestradeService:
             # Return only combined balances (these show the correct totals)
             combined_balances = data.get("combinedBalances", [])
             balances = [QuestradeBalance(**balance) for balance in combined_balances]
-            return balances
+            return balances, data
 
         except Exception as e:
             raise StockDataException(

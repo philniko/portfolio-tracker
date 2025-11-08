@@ -13,6 +13,13 @@ class TransactionType(str, enum.Enum):
     DIVIDEND = "DIVIDEND"
 
 
+class Currency(str, enum.Enum):
+    """Enum for supported currencies."""
+
+    CAD = "CAD"
+    USD = "USD"
+
+
 class Transaction(Base):
     """Transaction model representing buy/sell/dividend actions."""
 
@@ -24,6 +31,7 @@ class Transaction(Base):
     transaction_type = Column(SQLEnum(TransactionType), nullable=False)
     quantity = Column(Numeric(precision=18, scale=8), nullable=False)
     price = Column(Numeric(precision=18, scale=2), nullable=False)
+    currency = Column(SQLEnum(Currency), nullable=False, default=Currency.CAD)  # Currency of the price
     total_amount = Column(Numeric(precision=18, scale=2), nullable=False)  # quantity * price + fees
     fees = Column(Numeric(precision=18, scale=2), default=0)
     transaction_date = Column(DateTime(timezone=True), nullable=False)

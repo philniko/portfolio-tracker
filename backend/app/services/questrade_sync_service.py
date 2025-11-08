@@ -49,9 +49,63 @@ class QuestradeSyncService:
         # Get positions from Questrade
         positions = await questrade_service.get_positions(db, connection, account_id)
 
+        # Get balances from Questrade to sync cash
+        balances, balance_data = await questrade_service.get_balances(db, connection, account_id)
+
+        # Get total cash from combined balances (already in CAD, includes all currencies)
+        # We store this as CAD cash and set USD cash to 0 to avoid double-counting
+        combined_balances = balance_data.get("combinedBalances", [])
+        total_cash_cad = Decimal("0")
+        for balance in combined_balances:
+            if balance.get("currency") == "CAD":
+                total_cash_cad = Decimal(str(balance.get("cash", 0)))
+                break
+
+        portfolio.cash_balance_cad = total_cash_cad
+        portfolio.cash_balance_usd = Decimal("0")  # Already included in CAD total
+
+        # For return messages
+        cash_cad = total_cash_cad
+        cash_usd = Decimal("0")
+
+        # Calculate USD/CAD forex rate from Questrade's balances
+        # Use market values to derive the exact conversion rate
+        per_currency_balances = balance_data.get("perCurrencyBalances", [])
+
+        usd_market_value = None
+        cad_market_value = None
+        combined_market_value = None
+
+        # Get market values from per-currency balances
+        for pcb in per_currency_balances:
+            if pcb.get("currency") == "USD":
+                usd_market_value = Decimal(str(pcb.get("marketValue", 0)))
+            elif pcb.get("currency") == "CAD":
+                cad_market_value = Decimal(str(pcb.get("marketValue", 0)))
+
+        # Get combined CAD market value (includes USD converted to CAD)
+        for cb in combined_balances:
+            if cb.get("currency") == "CAD":
+                combined_market_value = Decimal(str(cb.get("marketValue", 0)))
+                break
+
+        # Calculate the forex rate Questrade is using
+        if usd_market_value and usd_market_value > 0 and combined_market_value and cad_market_value is not None:
+            # The difference between CAD combined market value and CAD-only market value is USD converted
+            usd_in_cad = combined_market_value - cad_market_value
+            # Derive the rate: USD amount * rate = CAD amount
+            questrade_rate = usd_in_cad / usd_market_value
+            portfolio.questrade_forex_rate = questrade_rate
+
         if not positions:
+            # Still update sync info even if no positions
+            portfolio.questrade_account_id = account_id
+            portfolio.last_questrade_sync = datetime.utcnow()
+            connection.last_sync_at = datetime.utcnow()
+            await db.commit()
+
             return {
-                "message": "No positions to sync",
+                "message": f"No positions to sync. Cash updated: ${cash_cad} CAD, ${cash_usd} USD",
                 "synced_count": 0,
             }
 
@@ -103,8 +157,16 @@ class QuestradeSyncService:
                 db, connection, portfolio_id, account_id
             )
 
-        # Update holdings table from transactions
-        await self._update_holdings(db, portfolio_id)
+        # Update holdings table from transactions using portfolio service
+        # This will fetch real currency data from stock prices
+        from app.repositories.portfolio_repository import PortfolioRepository
+        from app.repositories.transaction_repository import TransactionRepository
+        from app.services.portfolio_service import PortfolioService
+
+        portfolio_repo = PortfolioRepository(db)
+        transaction_repo = TransactionRepository(db)
+        portfolio_service = PortfolioService(portfolio_repo, transaction_repo)
+        await portfolio_service.sync_holdings(portfolio_id)
 
         # Update portfolio with Questrade sync info
         portfolio.questrade_account_id = account_id
@@ -119,76 +181,16 @@ class QuestradeSyncService:
             message += f" ({skipped_count} already imported)"
         if dividend_count > 0:
             message += f" and {dividend_count} dividends"
+        message += f". Cash: ${cash_cad} CAD, ${cash_usd} USD"
 
         return {
             "message": message,
             "synced_count": synced_count,
             "dividend_count": dividend_count,
             "skipped_count": skipped_count,
+            "cash_cad": float(cash_cad),
+            "cash_usd": float(cash_usd),
         }
-
-    async def _update_holdings(self, db: AsyncSession, portfolio_id: int):
-        """Update holdings table from all transactions."""
-        # Get all transactions for this portfolio
-        result = await db.execute(
-            select(Transaction)
-            .where(Transaction.portfolio_id == portfolio_id)
-            .order_by(Transaction.transaction_date)
-        )
-        transactions = result.scalars().all()
-
-        # Calculate holdings
-        holdings_data: Dict[str, Dict[str, Decimal]] = {}
-
-        for txn in transactions:
-            symbol = txn.symbol.upper()
-
-            if symbol not in holdings_data:
-                holdings_data[symbol] = {
-                    "quantity": Decimal("0"),
-                    "total_cost": Decimal("0"),
-                    "average_cost": Decimal("0"),
-                }
-
-            if txn.transaction_type == TransactionType.BUY:
-                new_quantity = holdings_data[symbol]["quantity"] + txn.quantity
-                new_total_cost = holdings_data[symbol]["total_cost"] + txn.total_amount
-                holdings_data[symbol]["quantity"] = new_quantity
-                holdings_data[symbol]["total_cost"] = new_total_cost
-                holdings_data[symbol]["average_cost"] = (
-                    new_total_cost / new_quantity if new_quantity > 0 else Decimal("0")
-                )
-
-        # Update or create holdings
-        for symbol, data in holdings_data.items():
-            if data["quantity"] <= 0:
-                continue
-
-            # Check if holding exists
-            result = await db.execute(
-                select(Holding).where(
-                    Holding.portfolio_id == portfolio_id,
-                    Holding.symbol == symbol
-                )
-            )
-            holding = result.scalar_one_or_none()
-
-            if holding:
-                holding.quantity = float(data["quantity"])
-                holding.average_cost = float(data["average_cost"])
-                holding.total_cost = float(data["total_cost"])
-                holding.updated_at = datetime.utcnow()
-            else:
-                holding = Holding(
-                    portfolio_id=portfolio_id,
-                    symbol=symbol,
-                    quantity=float(data["quantity"]),
-                    average_cost=float(data["average_cost"]),
-                    total_cost=float(data["total_cost"]),
-                )
-                db.add(holding)
-
-        await db.commit()
 
     async def _sync_dividends(
         self,

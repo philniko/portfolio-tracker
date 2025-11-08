@@ -13,6 +13,7 @@ export default function PortfolioDetail() {
   const [transactionType, setTransactionType] = useState<'BUY' | 'SELL' | 'DIVIDEND'>('BUY');
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState('');
+  const [currency, setCurrency] = useState<'CAD' | 'USD'>('CAD');
   const [fees, setFees] = useState('0');
   const [transactionDate, setTransactionDate] = useState(new Date().toISOString().split('T')[0]);
   const [notes, setNotes] = useState('');
@@ -21,13 +22,20 @@ export default function PortfolioDetail() {
   const transactionsPerPage = 20;
   const [showAIAnalysis, setShowAIAnalysis] = useState(false);
   const [aiAnalysis, setAiAnalysis] = useState('');
+  const [showEditCash, setShowEditCash] = useState(false);
+  const [cashCAD, setCashCAD] = useState('0');
+  const [cashUSD, setCashUSD] = useState('0');
   const queryClient = useQueryClient();
 
   const { data: portfolio, isLoading: portfolioLoading } = useQuery({
     queryKey: ['portfolio', portfolioId],
     queryFn: async () => {
       const response = await portfolioAPI.getById(portfolioId);
-      return response.data;
+      const data = response.data;
+      // Set cash values when portfolio loads
+      setCashCAD(data.cash_balance_cad?.toString() || '0');
+      setCashUSD(data.cash_balance_usd?.toString() || '0');
+      return data;
     },
   });
 
@@ -84,6 +92,36 @@ export default function PortfolioDetail() {
     },
   });
 
+  const syncHoldingsMutation = useMutation({
+    mutationFn: () => portfolioAPI.syncHoldings(portfolioId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
+      queryClient.invalidateQueries({ queryKey: ['transactions', portfolioId] });
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.detail || 'Failed to sync holdings');
+    },
+  });
+
+  const updateCashMutation = useMutation({
+    mutationFn: (data: { cash_balance_cad: number; cash_balance_usd: number }) =>
+      portfolioAPI.update(portfolioId, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['portfolio', portfolioId] });
+      setShowEditCash(false);
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.detail || 'Failed to update cash balance');
+    },
+  });
+
+  const handleUpdateCash = () => {
+    updateCashMutation.mutate({
+      cash_balance_cad: parseFloat(cashCAD) || 0,
+      cash_balance_usd: parseFloat(cashUSD) || 0,
+    });
+  };
+
   const handleDeleteTransaction = (transactionId: number, symbol: string, type: string) => {
     if (window.confirm(`Are you sure you want to delete this ${type} transaction for ${symbol}?`)) {
       deleteTransactionMutation.mutate(transactionId);
@@ -95,6 +133,7 @@ export default function PortfolioDetail() {
     setTransactionType('BUY');
     setQuantity('');
     setPrice('');
+    setCurrency('CAD');
     setFees('0');
     setTransactionDate(new Date().toISOString().split('T')[0]);
     setNotes('');
@@ -114,6 +153,7 @@ export default function PortfolioDetail() {
       transaction_type: transactionType,
       quantity: parseFloat(quantity),
       price: parseFloat(price),
+      currency: currency,
       fees: parseFloat(fees) || 0,
       transaction_date: new Date(transactionDate).toISOString(),
       notes: notes || undefined,
@@ -240,6 +280,17 @@ export default function PortfolioDetail() {
                 />
               </div>
               <div>
+                <label>Currency:</label>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value as 'CAD' | 'USD')}
+                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+                >
+                  <option value="CAD">CAD</option>
+                  <option value="USD">USD</option>
+                </select>
+              </div>
+              <div>
                 <label>Fees (optional):</label>
                 <input
                   type="number"
@@ -294,15 +345,18 @@ export default function PortfolioDetail() {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '15px' }}>
           <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
-            <div style={{ fontSize: '14px', color: '#666' }}>Total Value</div>
+            <div style={{ fontSize: '14px', color: '#666' }}>Total Value (with cash)</div>
             <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
-              ${portfolio?.total_value ? parseFloat(portfolio.total_value).toFixed(2) : '0.00'}
+              ${portfolio?.total_value_with_cash ? parseFloat(portfolio.total_value_with_cash).toFixed(2) : '0.00'} <span style={{ fontSize: '14px', color: '#999' }}>CAD</span>
+            </div>
+            <div style={{ fontSize: '12px', color: '#999', marginTop: '5px' }}>
+              Holdings: ${portfolio?.total_value ? parseFloat(portfolio.total_value).toFixed(2) : '0.00'}
             </div>
           </div>
           <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
             <div style={{ fontSize: '14px', color: '#666' }}>Total Cost</div>
             <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
-              ${portfolio?.total_cost ? parseFloat(portfolio.total_cost).toFixed(2) : '0.00'}
+              ${portfolio?.total_cost ? parseFloat(portfolio.total_cost).toFixed(2) : '0.00'} <span style={{ fontSize: '14px', color: '#999' }}>CAD</span>
             </div>
           </div>
           <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
@@ -314,7 +368,7 @@ export default function PortfolioDetail() {
                 color: portfolio?.total_gain_loss >= 0 ? 'green' : 'red',
               }}
             >
-              ${portfolio?.total_gain_loss ? parseFloat(portfolio.total_gain_loss).toFixed(2) : '0.00'}
+              ${portfolio?.total_gain_loss ? parseFloat(portfolio.total_gain_loss).toFixed(2) : '0.00'} <span style={{ fontSize: '14px', color: '#999' }}>CAD</span>
             </div>
           </div>
           <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
@@ -336,7 +390,68 @@ export default function PortfolioDetail() {
               ${dividendTotal.toFixed(2)}
             </div>
           </div>
+          <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff8e1', cursor: 'pointer' }} onClick={() => setShowEditCash(!showEditCash)}>
+            <div style={{ fontSize: '14px', color: '#666', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              Cash Balance
+              <span style={{ fontSize: '12px' }}>✏️ Edit</span>
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#333', marginTop: '8px' }}>
+              ${portfolio?.cash_balance_cad ? parseFloat(portfolio.cash_balance_cad).toFixed(2) : '0.00'} <span style={{ fontSize: '12px', color: '#999' }}>CAD</span>
+            </div>
+            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#333', marginTop: '4px' }}>
+              ${portfolio?.cash_balance_usd ? parseFloat(portfolio.cash_balance_usd).toFixed(2) : '0.00'} <span style={{ fontSize: '12px', color: '#999' }}>USD</span>
+            </div>
+          </div>
         </div>
+
+        {showEditCash && (
+          <div style={{
+            padding: '20px',
+            border: '2px solid #ffc107',
+            borderRadius: '8px',
+            marginTop: '20px',
+            backgroundColor: '#fffbf0'
+          }}>
+            <h3 style={{ marginTop: 0 }}>Edit Cash Balance</h3>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+              <div>
+                <label>CAD Cash:</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={cashCAD}
+                  onChange={(e) => setCashCAD(e.target.value)}
+                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+                />
+              </div>
+              <div>
+                <label>USD Cash:</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={cashUSD}
+                  onChange={(e) => setCashUSD(e.target.value)}
+                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
+                />
+              </div>
+            </div>
+            <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+              <button
+                onClick={handleUpdateCash}
+                disabled={updateCashMutation.isPending}
+                style={{ backgroundColor: '#28a745', padding: '10px 20px' }}
+              >
+                {updateCashMutation.isPending ? 'Saving...' : 'Save Cash Balance'}
+              </button>
+              <button
+                onClick={() => setShowEditCash(false)}
+                style={{ backgroundColor: '#6c757d', padding: '10px 20px' }}
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {showAIAnalysis && aiAnalysis && (
@@ -390,14 +505,19 @@ export default function PortfolioDetail() {
             <tbody>
               {portfolio.holdings.map((holding: any) => (
                 <tr key={holding.id} style={{ borderBottom: '1px solid #eee' }}>
-                  <td style={{ padding: '10px', fontWeight: 'bold' }}>{holding.symbol}</td>
+                  <td style={{ padding: '10px' }}>
+                    <div style={{ fontWeight: 'bold' }}>{holding.symbol}</div>
+                    <div style={{ fontSize: '12px', color: '#999' }}>{holding.currency}</div>
+                  </td>
                   <td style={{ padding: '10px', textAlign: 'right' }}>{parseFloat(holding.quantity).toFixed(2)}</td>
-                  <td style={{ padding: '10px', textAlign: 'right' }}>${parseFloat(holding.average_cost).toFixed(2)}</td>
                   <td style={{ padding: '10px', textAlign: 'right' }}>
-                    ${holding.current_price ? parseFloat(holding.current_price).toFixed(2) : '-'}
+                    ${parseFloat(holding.average_cost).toFixed(2)} <span style={{ fontSize: '11px', color: '#999' }}>{holding.currency}</span>
                   </td>
                   <td style={{ padding: '10px', textAlign: 'right' }}>
-                    ${holding.current_value ? parseFloat(holding.current_value).toFixed(2) : '-'}
+                    {holding.current_price ? `$${parseFloat(holding.current_price).toFixed(2)}` : '-'} {holding.current_price && <span style={{ fontSize: '11px', color: '#999' }}>{holding.currency}</span>}
+                  </td>
+                  <td style={{ padding: '10px', textAlign: 'right' }}>
+                    {holding.current_value ? `$${parseFloat(holding.current_value).toFixed(2)}` : '-'} {holding.current_value && <span style={{ fontSize: '11px', color: '#999' }}>{holding.currency}</span>}
                   </td>
                   <td
                     style={{
@@ -407,10 +527,11 @@ export default function PortfolioDetail() {
                       fontWeight: 'bold',
                     }}
                   >
-                    ${holding.unrealized_gain_loss ? parseFloat(holding.unrealized_gain_loss).toFixed(2) : '-'}
+                    {holding.unrealized_gain_loss ? `$${parseFloat(holding.unrealized_gain_loss).toFixed(2)}` : '-'}
                     {holding.unrealized_gain_loss_percent && (
                       <span> ({parseFloat(holding.unrealized_gain_loss_percent).toFixed(2)}%)</span>
                     )}
+                    {holding.unrealized_gain_loss && <span style={{ fontSize: '11px', color: '#999', fontWeight: 'normal' }}> {holding.currency}</span>}
                   </td>
                 </tr>
               ))}
@@ -442,6 +563,7 @@ export default function PortfolioDetail() {
                   <th style={{ padding: '10px', textAlign: 'left' }}>Symbol</th>
                   <th style={{ padding: '10px', textAlign: 'right' }}>Quantity</th>
                   <th style={{ padding: '10px', textAlign: 'right' }}>Price</th>
+                  <th style={{ padding: '10px', textAlign: 'right' }}>Currency</th>
                   <th style={{ padding: '10px', textAlign: 'right' }}>Total</th>
                   <th style={{ padding: '10px', textAlign: 'center' }}>Actions</th>
                 </tr>
@@ -479,6 +601,17 @@ export default function PortfolioDetail() {
                       <td style={{ padding: '10px', fontWeight: 'bold' }}>{txn.symbol}</td>
                       <td style={{ padding: '10px', textAlign: 'right' }}>{parseFloat(txn.quantity).toFixed(2)}</td>
                       <td style={{ padding: '10px', textAlign: 'right' }}>${parseFloat(txn.price).toFixed(2)}</td>
+                      <td style={{ padding: '10px', textAlign: 'right' }}>
+                        <span style={{
+                          padding: '2px 6px',
+                          borderRadius: '3px',
+                          fontSize: '11px',
+                          backgroundColor: txn.currency === 'USD' ? '#fff3cd' : '#d4edda',
+                          color: txn.currency === 'USD' ? '#856404' : '#155724'
+                        }}>
+                          {txn.currency || 'CAD'}
+                        </span>
+                      </td>
                       <td style={{ padding: '10px', textAlign: 'right', fontWeight: 'bold' }}>
                         ${parseFloat(txn.total_amount).toFixed(2)}
                       </td>

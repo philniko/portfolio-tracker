@@ -190,7 +190,7 @@ async def get_questrade_balances(
     if not connection:
         raise HTTPException(status_code=404, detail="Questrade not connected")
 
-    balances = await questrade_service.get_balances(db, connection, account_id)
+    balances, _ = await questrade_service.get_balances(db, connection, account_id)
     return balances
 
 

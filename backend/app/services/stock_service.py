@@ -8,6 +8,7 @@ import requests
 from app.core.config import settings
 from app.core.exceptions import StockDataException
 from app.schemas.transaction import StockPriceResponse
+from app.models.transaction import Currency
 
 
 class StockService:
@@ -96,6 +97,14 @@ class StockService:
             day_low = Decimal(str(quotes["low"][-1])) if quotes.get("low") and quotes["low"][-1] is not None else None
             volume = int(quotes["volume"][-1]) if quotes.get("volume") and quotes["volume"][-1] is not None else None
 
+            # Detect currency from Yahoo Finance metadata
+            currency_str = meta.get("currency", "CAD").upper()
+            # Map common currency codes to our Currency enum
+            if currency_str in ["USD", "US$", "DOLLARS"]:
+                currency = Currency.USD
+            else:
+                currency = Currency.CAD  # Default to CAD
+
             stock_data = StockPriceResponse(
                 symbol=symbol.upper(),
                 current_price=current_price,
@@ -107,6 +116,7 @@ class StockService:
                 market_cap=meta.get("marketCap"),
                 change=change,
                 change_percent=change_percent,
+                currency=currency,
                 timestamp=datetime.utcnow(),
             )
 

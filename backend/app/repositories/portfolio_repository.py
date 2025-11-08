@@ -2,6 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from app.models.portfolio import Portfolio, Holding
+from app.models.transaction import Currency
 from typing import List, Optional
 
 
@@ -68,6 +69,7 @@ class PortfolioRepository:
         quantity: float,
         average_cost: float,
         total_cost: float,
+        currency: Currency = Currency.CAD,
     ) -> Holding:
         """Update or create a holding."""
         holding = await self.get_holding(portfolio_id, symbol)
@@ -75,6 +77,7 @@ class PortfolioRepository:
             holding.quantity = quantity
             holding.average_cost = average_cost
             holding.total_cost = total_cost
+            holding.currency = currency
         else:
             holding = Holding(
                 portfolio_id=portfolio_id,
@@ -82,6 +85,7 @@ class PortfolioRepository:
                 quantity=quantity,
                 average_cost=average_cost,
                 total_cost=total_cost,
+                currency=currency,
             )
             self.db.add(holding)
         await self.db.flush()
