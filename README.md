@@ -6,12 +6,13 @@ A production-grade, full-stack portfolio tracking application built with FastAPI
 
 ### Core Functionality
 - **Real-Time Stock Data**: Integration with Yahoo Finance for live market data
-- **Portfolio Management**: Create and manage multiple investment portfolios
-- **Transaction Tracking**: Record buy, sell, and dividend transactions
+- **Multi-Currency Support**: Track USD and CAD stocks with automatic currency detection and conversion
+- **Portfolio Management**: Create and manage multiple investment portfolios with cash balance tracking
+- **Transaction Tracking**: Record buy, sell, and dividend transactions with currency support
 - **Cost Basis Calculation**: Automatic calculation using average cost method
-- **Performance Metrics**: Real-time P&L, returns, and allocation tracking
+- **Performance Metrics**: Real-time P&L, returns, and allocation tracking in CAD
 - **Multi-User Support**: JWT-based authentication and user management
-- **Questrade Integration**: Automatic portfolio syncing with Questrade brokerage accounts
+- **Questrade Integration**: Automatic portfolio, cash balance, and dividend syncing with exact forex rates
 - **AI-Powered Analysis**: GPT-4o-mini portfolio insights and investment recommendations
 
 ### Advanced Features
@@ -308,11 +309,14 @@ Content-Type: application/json
   "transaction_type": "BUY",
   "quantity": 10,
   "price": 150.50,
+  "currency": "USD",
   "fees": 0.99,
   "transaction_date": "2024-01-15T10:30:00Z",
   "notes": "Initial purchase"
 }
 ```
+
+**Note**: Currency is auto-detected from stock data if not specified. Supports `CAD` and `USD`.
 
 #### Get Portfolio Transactions
 ```http
@@ -432,7 +436,10 @@ DATABASE_URL_SYNC=postgresql://user:pass@host:5432/dbname
 REDIS_URL=redis://redis:6379/0
 
 # CORS
-CORS_ORIGINS=["https://yourdomain.com"]
+CORS_ORIGINS=["https://yourdomain.com","https://www.yourdomain.com"]
+
+# OpenAI (for AI portfolio analysis)
+OPENAI_API_KEY=sk-your-openai-api-key
 ```
 
 ### Security Checklist

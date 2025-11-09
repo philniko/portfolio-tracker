@@ -37,11 +37,13 @@ This application follows **Clean Architecture** principles with clear separation
 
 ### 2. Portfolio Management
 - Create and manage multiple portfolios
-- Real-time portfolio valuation
-- Automatic cost basis calculation
+- Multi-currency support (USD/CAD) with automatic detection
+- Cash balance tracking (CAD and USD)
+- Real-time portfolio valuation in CAD
+- Automatic cost basis calculation with currency conversion
 - Performance metrics (P&L, returns)
 - Portfolio allocation tracking
-- Questrade account linking and auto-sync
+- Questrade account linking and auto-sync with exact forex rates
 
 ### 3. Transaction Tracking
 - Buy/Sell/Dividend transactions
@@ -104,7 +106,10 @@ This application follows **Clean Architecture** principles with clear separation
 - name: String
 - description: String (Optional)
 - user_id: Integer (Foreign Key)
+- cash_balance_cad: Decimal (default 0, synced from Questrade or manual)
+- cash_balance_usd: Decimal (default 0, synced from Questrade or manual)
 - questrade_account_id: String (Optional, links to Questrade account)
+- questrade_forex_rate: Decimal (Optional, exact USD/CAD rate from Questrade)
 - last_questrade_sync: DateTime (Optional, timestamp of last sync)
 - created_at: DateTime
 - updated_at: DateTime
@@ -118,6 +123,7 @@ This application follows **Clean Architecture** principles with clear separation
 - quantity: Decimal
 - average_cost: Decimal
 - total_cost: Decimal
+- currency: Enum (CAD, USD) - auto-detected from stock data
 - updated_at: DateTime
 ```
 
@@ -131,6 +137,7 @@ This application follows **Clean Architecture** principles with clear separation
 - price: Decimal
 - total_amount: Decimal
 - fees: Decimal
+- currency: Enum (CAD, USD) - auto-detected or manually specified
 - transaction_date: DateTime
 - notes: String (Optional)
 - created_at: DateTime
@@ -144,11 +151,12 @@ This application follows **Clean Architecture** principles with clear separation
 - `GET /api/v1/auth/me` - Get current user info
 
 ### Portfolios
-- `GET /api/v1/portfolios` - List user's portfolios with Questrade sync status
-- `POST /api/v1/portfolios` - Create new portfolio
-- `GET /api/v1/portfolios/{id}` - Get portfolio with real-time data
-- `PUT /api/v1/portfolios/{id}` - Update portfolio
+- `GET /api/v1/portfolios` - List user's portfolios with Questrade sync status and cash balances
+- `POST /api/v1/portfolios` - Create new portfolio with optional cash balances
+- `GET /api/v1/portfolios/{id}` - Get portfolio with real-time data (all values in CAD)
+- `PUT /api/v1/portfolios/{id}` - Update portfolio (name, description, cash balances)
 - `DELETE /api/v1/portfolios/{id}` - Delete portfolio
+- `POST /api/v1/portfolios/{id}/sync-holdings` - Sync holdings and update currencies from stock data
 - `POST /api/v1/portfolios/{id}/sync-questrade` - Sync Questrade-linked portfolio
 
 ### Transactions
@@ -199,13 +207,17 @@ Store tokens in database (per-user)
 **3. Portfolio Sync:**
 ```python
 1. Fetch positions from Questrade account
-2. Create BUY transactions for each position
-3. Check for duplicate transactions (skip if exists)
-4. Fetch dividends/distributions from last 365 days
-5. Create DIVIDEND transactions
-6. Update holdings table from all transactions
-7. Link portfolio to Questrade account
-8. Update last_sync timestamp
+2. Fetch balances to get cash amounts and market values
+3. Calculate USD/CAD forex rate from Questrade's balance data
+4. Store cash balance (combinedBalances CAD total)
+5. Store forex rate for consistent conversions
+6. Create BUY transactions for each position
+7. Check for duplicate transactions (skip if exists)
+8. Fetch dividends/distributions from last 365 days
+9. Create DIVIDEND transactions
+10. Update holdings table from all transactions (fetches currencies from stock data)
+11. Link portfolio to Questrade account
+12. Update last_sync timestamp
 ```
 
 **4. Sync Features:**
@@ -260,13 +272,56 @@ unrealized_gain_loss = (current_price * quantity) - total_cost
 unrealized_gain_loss_percent = (unrealized_gain_loss / total_cost) * 100
 ```
 
-**Portfolio Total Value:**
+**Portfolio Total Value (all in CAD):**
+```python
+# Convert each holding to CAD
+for holding in holdings:
+    if holding.currency == USD and portfolio.questrade_forex_rate:
+        # Use Questrade's exact rate for consistency
+        holding_value_cad = holding.value * portfolio.questrade_forex_rate
+    else:
+        # Use real-time exchange rate
+        holding_value_cad = convert_to_cad(holding.value, holding.currency)
+
+    total_value_cad += holding_value_cad
+
+# Add cash (also converted to CAD)
+cash_cad = portfolio.cash_balance_cad
+if portfolio.questrade_forex_rate:
+    cash_usd_in_cad = portfolio.cash_balance_usd * portfolio.questrade_forex_rate
+else:
+    cash_usd_in_cad = convert_to_cad(portfolio.cash_balance_usd, USD)
+
+total_value_with_cash = total_value_cad + cash_cad + cash_usd_in_cad
+total_gain_loss = total_value_cad - total_cost_cad
+total_gain_loss_percent = (total_gain_loss / total_cost_cad) * 100
 ```
-total_value = sum(holding.quantity * holding.current_price for all holdings)
-total_cost = sum(holding.total_cost for all holdings)
-total_gain_loss = total_value - total_cost
-total_gain_loss_percent = (total_gain_loss / total_cost) * 100
+
+## Multi-Currency Support
+
+### Currency Detection
+- **Automatic Detection**: Stock currency is automatically detected from Yahoo Finance metadata
+- **Supported Currencies**: CAD and USD
+- **Default**: CAD if currency cannot be determined
+
+### Currency Conversion
+- **Real-Time Rates**: Fetched from Yahoo Finance (USDCAD=X ticker)
+- **Rate Caching**: Exchange rates cached for 1 hour
+- **Questrade Forex Rate**: When syncing from Questrade, the exact USD/CAD rate used by Questrade is stored and used for all conversions to ensure portfolio totals match Questrade's values exactly
+
+### Currency Service
+```python
+class CurrencyService:
+    async def get_exchange_rate(from_currency: Currency, to_currency: Currency) -> Decimal
+    async def convert_amount(amount: Decimal, from_currency: Currency, to_currency: Currency) -> Decimal
 ```
+
+### How It Works
+1. **Stock Price Fetch**: Currency is extracted from stock metadata
+2. **Transaction Creation**: Currency defaults to CAD or can be specified
+3. **Holdings Update**: Currency is refreshed from real-time stock data
+4. **Portfolio Display**: All values shown in CAD with automatic conversion
+5. **Questrade Sync**: Exact forex rate stored for consistent matching
 
 ## Caching Strategy
 

@@ -101,6 +101,7 @@ Now you can test all endpoints!
   "transaction_type": "BUY",
   "quantity": 10,
   "price": 150.50,
+  "currency": "USD",
   "fees": 0,
   "transaction_date": "2024-01-15T10:30:00Z",
   "notes": "Initial purchase"
@@ -108,12 +109,18 @@ Now you can test all endpoints!
 ```
 3. Click "Execute"
 
+**Note**: The `currency` field is optional and will be auto-detected from stock data if not specified. Supports `CAD` and `USD`.
+
 ### 9. View Portfolio with Real-Time Data
 
 1. Go to `GET /api/v1/portfolios/{portfolio_id}`
 2. Enter your portfolio ID
 3. Click "Execute"
-4. See real-time stock prices, P&L, and performance metrics!
+4. See:
+   - Real-time stock prices with currency indicators (USD/CAD)
+   - P&L and performance metrics (all in CAD)
+   - Cash balances
+   - Total portfolio value including cash
 
 ## Using Local Development Setup
 
@@ -221,6 +228,7 @@ curl -X POST http://localhost:8000/api/v1/transactions \
     "transaction_type": "BUY",
     "quantity": 10,
     "price": 150.50,
+    "currency": "USD",
     "fees": 0,
     "transaction_date": "2024-01-15T10:30:00Z"
   }'
