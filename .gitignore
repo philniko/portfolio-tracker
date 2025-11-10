@@ -73,3 +73,9 @@ DEPLOYMENT_CHECKLIST.md
 DEPLOYMENT_VERCEL.md
 VERCEL_DEPLOYMENT.md
 DEPLOYMENT.md
+
+# Claude Code AI assistant files
+.claude/
+.clauderc
+claude-*.md
+CLAUDE*.md
