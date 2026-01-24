@@ -166,44 +166,43 @@ export default function PortfolioDetail() {
   const paginatedTransactions = transactions?.slice(startIndex, endIndex) || [];
 
   if (portfolioLoading) {
-    return <div style={{ padding: '20px' }}>Loading...</div>;
+    return <div className="container"><p className="font-bold">Loading...</p></div>;
   }
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <Link to="/dashboard" style={{ marginBottom: '20px', display: 'inline-block' }}>
+    <div className="container">
+      <Link to="/dashboard" className="mb-lg" style={{ display: 'inline-block' }}>
         ← Back to Dashboard
       </Link>
 
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="flex-between mb-xl">
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <h1>{portfolio?.name}</h1>
+          <div className="flex gap-md" style={{ alignItems: 'center', marginBottom: '8px' }}>
+            <h1 className="page-title" style={{ fontSize: '36px', marginBottom: 0 }}>{portfolio?.name}</h1>
             {portfolio?.questrade_account_id && (
               <span className="badge badge-success">🔗 Questrade</span>
             )}
           </div>
-          <p style={{ color: '#666' }}>{portfolio?.description}</p>
+          <p className="text-secondary">{portfolio?.description}</p>
           {portfolio?.last_questrade_sync && (
-            <p style={{ fontSize: '12px', color: '#888', marginTop: '5px' }}>
+            <p className="text-sm text-secondary mt-sm">
               Last synced: {new Date(portfolio.last_questrade_sync).toLocaleString()}
             </p>
           )}
         </div>
-        <div style={{ display: 'flex', gap: '10px' }}>
+        <div className="flex gap-md">
           {portfolio?.questrade_account_id && (
             <button
               onClick={() => syncQuestradeMutation.mutate()}
               disabled={syncQuestradeMutation.isPending}
               className="btn-success"
-              style={{ padding: '10px 20px' }}
             >
               {syncQuestradeMutation.isPending ? 'Syncing...' : '🔄 Sync Questrade'}
             </button>
           )}
           <button
             onClick={() => setShowAddTransaction(!showAddTransaction)}
-            style={{ backgroundColor: '#007bff', padding: '10px 20px' }}
+            className="btn-primary"
           >
             {showAddTransaction ? 'Cancel' : '+ Add Transaction'}
           </button>
@@ -211,17 +210,11 @@ export default function PortfolioDetail() {
       </div>
 
       {showAddTransaction && (
-        <div style={{
-          padding: '20px',
-          border: '1px solid #ddd',
-          borderRadius: '8px',
-          marginTop: '20px',
-          backgroundColor: '#f9f9f9'
-        }}>
-          <h3>Add Transaction</h3>
+        <div className="card mb-xl">
+          <h3 className="font-extrabold mb-md">Add Transaction</h3>
           <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              <div>
+            <div className="transaction-form-grid">
+              <div className="form-group">
                 <label>Stock Symbol:</label>
                 <input
                   type="text"
@@ -229,22 +222,20 @@ export default function PortfolioDetail() {
                   onChange={(e) => setSymbol(e.target.value.toUpperCase())}
                   placeholder="e.g., AAPL, GOOGL, MSFT"
                   required
-                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
                 />
               </div>
-              <div>
+              <div className="form-group">
                 <label>Transaction Type:</label>
                 <select
                   value={transactionType}
                   onChange={(e) => setTransactionType(e.target.value as any)}
-                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
                 >
                   <option value="BUY">Buy</option>
                   <option value="SELL">Sell</option>
                   <option value="DIVIDEND">Dividend</option>
                 </select>
               </div>
-              <div>
+              <div className="form-group">
                 <label>Quantity:</label>
                 <input
                   type="number"
@@ -253,10 +244,9 @@ export default function PortfolioDetail() {
                   onChange={(e) => setQuantity(e.target.value)}
                   placeholder="10"
                   required
-                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
                 />
               </div>
-              <div>
+              <div className="form-group">
                 <label>Price per Share:</label>
                 <input
                   type="number"
@@ -265,21 +255,19 @@ export default function PortfolioDetail() {
                   onChange={(e) => setPrice(e.target.value)}
                   placeholder="150.50"
                   required
-                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
                 />
               </div>
-              <div>
+              <div className="form-group">
                 <label>Currency:</label>
                 <select
                   value={currency}
                   onChange={(e) => setCurrency(e.target.value as 'CAD' | 'USD')}
-                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
                 >
                   <option value="CAD">CAD</option>
                   <option value="USD">USD</option>
                 </select>
               </div>
-              <div>
+              <div className="form-group">
                 <label>Fees (optional):</label>
                 <input
                   type="number"
@@ -287,148 +275,133 @@ export default function PortfolioDetail() {
                   value={fees}
                   onChange={(e) => setFees(e.target.value)}
                   placeholder="0.00"
-                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
                 />
               </div>
-              <div>
+              <div className="form-group">
                 <label>Transaction Date:</label>
                 <input
                   type="date"
                   value={transactionDate}
                   onChange={(e) => setTransactionDate(e.target.value)}
                   required
-                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
                 />
               </div>
             </div>
-            <div style={{ marginTop: '15px' }}>
+            <div className="form-group">
               <label>Notes (optional):</label>
               <textarea
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
                 placeholder="Add notes about this transaction..."
                 rows={2}
-                style={{ width: '100%', padding: '8px', marginTop: '5px' }}
               />
             </div>
-            {error && <div style={{ color: 'red', marginTop: '10px' }}>{error}</div>}
-            <div style={{ marginTop: '15px' }}>
-              <button type="submit" disabled={addTransactionMutation.isPending}>
-                {addTransactionMutation.isPending ? 'Adding...' : 'Add Transaction'}
-              </button>
-            </div>
+            {error && <div className="alert alert-error">{error}</div>}
+            <button type="submit" disabled={addTransactionMutation.isPending} className="btn-primary">
+              {addTransactionMutation.isPending ? 'Adding...' : 'Add Transaction'}
+            </button>
           </form>
         </div>
       )}
 
-      <div style={{ marginTop: '30px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h2>Portfolio Summary</h2>
+      <div className="mt-xl">
+        <div className="flex-between mb-lg">
+          <h2 className="card-header" style={{ marginBottom: 0, border: 'none', padding: 0 }}>Portfolio Summary</h2>
           <button
             onClick={() => aiAnalysisMutation.mutate()}
             disabled={aiAnalysisMutation.isPending}
-            style={{ backgroundColor: '#6f42c1', padding: '10px 20px', color: 'white' }}
+            className="btn-ai"
           >
             {aiAnalysisMutation.isPending ? 'Analyzing...' : '🤖 Get AI Advice'}
           </button>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '20px', marginTop: '15px' }}>
-          <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
-            <div style={{ fontSize: '14px', color: '#666' }}>Total Value (with cash)</div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
-              ${portfolio?.total_value_with_cash ? parseFloat(portfolio.total_value_with_cash).toFixed(2) : '0.00'} <span style={{ fontSize: '14px', color: '#999' }}>CAD</span>
+        <div className="summary-grid">
+          <div className="stats-card">
+            <div className="stats-label">Total Value (with cash)</div>
+            <div className="stats-value">
+              ${portfolio?.total_value_with_cash ? parseFloat(portfolio.total_value_with_cash).toFixed(2) : '0.00'} <span className="text-sm text-secondary">CAD</span>
             </div>
-            <div style={{ fontSize: '12px', color: '#999', marginTop: '5px' }}>
+            <div className="text-sm text-secondary mt-sm">
               Holdings: ${portfolio?.total_value ? parseFloat(portfolio.total_value).toFixed(2) : '0.00'}
             </div>
           </div>
-          <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
-            <div style={{ fontSize: '14px', color: '#666' }}>Total Cost</div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold' }}>
-              ${portfolio?.total_cost ? parseFloat(portfolio.total_cost).toFixed(2) : '0.00'} <span style={{ fontSize: '14px', color: '#999' }}>CAD</span>
+          <div className="stats-card">
+            <div className="stats-label">Total Cost</div>
+            <div className="stats-value">
+              ${portfolio?.total_cost ? parseFloat(portfolio.total_cost).toFixed(2) : '0.00'} <span className="text-sm text-secondary">CAD</span>
             </div>
           </div>
-          <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
-            <div style={{ fontSize: '14px', color: '#666' }}>Gain/Loss</div>
+          <div className="stats-card">
+            <div className="stats-label">Gain/Loss</div>
             <div
+              className="stats-value"
               style={{
-                fontSize: '24px',
-                fontWeight: 'bold',
-                color: portfolio?.total_gain_loss >= 0 ? 'green' : 'red',
+                color: portfolio?.total_gain_loss >= 0 ? '#00C853' : '#FF0000',
               }}
             >
-              ${portfolio?.total_gain_loss ? parseFloat(portfolio.total_gain_loss).toFixed(2) : '0.00'} <span style={{ fontSize: '14px', color: '#999' }}>CAD</span>
+              ${portfolio?.total_gain_loss ? parseFloat(portfolio.total_gain_loss).toFixed(2) : '0.00'} <span className="text-sm text-secondary">CAD</span>
             </div>
           </div>
-          <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px' }}>
-            <div style={{ fontSize: '14px', color: '#666' }}>Return %</div>
+          <div className="stats-card">
+            <div className="stats-label">Return %</div>
             <div
+              className="stats-value"
               style={{
-                fontSize: '24px',
-                fontWeight: 'bold',
-                color: portfolio?.total_gain_loss_percent >= 0 ? 'green' : 'red',
+                color: portfolio?.total_gain_loss_percent >= 0 ? '#00C853' : '#FF0000',
               }}
             >
               {portfolio?.total_gain_loss_percent ? parseFloat(portfolio.total_gain_loss_percent).toFixed(2) : '0.00'}%
             </div>
           </div>
-          <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#e7f3ff' }}>
-            <div style={{ fontSize: '14px', color: '#666' }}>Income (Last Year)</div>
-            <div style={{ fontSize: '12px', color: '#999', marginTop: '2px' }}>Dividends, Distributions, Interest</div>
-            <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#28a745' }}>
+          <div className="stats-card bg-yellow">
+            <div className="stats-label">Income (Last Year)</div>
+            <div className="text-sm text-secondary mb-xs">Dividends, Distributions, Interest</div>
+            <div className="stats-value text-success">
               ${dividendTotal.toFixed(2)}
             </div>
           </div>
-          <div style={{ padding: '15px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#fff8e1', cursor: 'pointer' }} onClick={() => setShowEditCash(!showEditCash)}>
-            <div style={{ fontSize: '14px', color: '#666', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className="stats-card bg-cream" style={{ cursor: 'pointer' }} onClick={() => setShowEditCash(!showEditCash)}>
+            <div className="flex-between stats-label">
               Cash Balance
-              <span style={{ fontSize: '12px' }}>✏️ Edit</span>
+              <span className="text-sm">✏️ Edit</span>
             </div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#333', marginTop: '8px' }}>
-              ${portfolio?.cash_balance_cad ? parseFloat(portfolio.cash_balance_cad).toFixed(2) : '0.00'} <span style={{ fontSize: '12px', color: '#999' }}>CAD</span>
+            <div className="font-bold text-lg mt-sm">
+              ${portfolio?.cash_balance_cad ? parseFloat(portfolio.cash_balance_cad).toFixed(2) : '0.00'} <span className="text-sm text-secondary">CAD</span>
             </div>
-            <div style={{ fontSize: '18px', fontWeight: 'bold', color: '#333', marginTop: '4px' }}>
-              ${portfolio?.cash_balance_usd ? parseFloat(portfolio.cash_balance_usd).toFixed(2) : '0.00'} <span style={{ fontSize: '12px', color: '#999' }}>USD</span>
+            <div className="font-bold text-lg mt-xs">
+              ${portfolio?.cash_balance_usd ? parseFloat(portfolio.cash_balance_usd).toFixed(2) : '0.00'} <span className="text-sm text-secondary">USD</span>
             </div>
           </div>
         </div>
 
         {showEditCash && (
-          <div style={{
-            padding: '20px',
-            border: '2px solid #ffc107',
-            borderRadius: '8px',
-            marginTop: '20px',
-            backgroundColor: '#fffbf0'
-          }}>
-            <h3 style={{ marginTop: 0 }}>Edit Cash Balance</h3>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-              <div>
+          <div className="card mt-lg border-thick" style={{ borderColor: '#FFA000' }}>
+            <h3 className="font-extrabold mb-md">Edit Cash Balance</h3>
+            <div className="transaction-form-grid">
+              <div className="form-group">
                 <label>CAD Cash:</label>
                 <input
                   type="number"
                   step="0.01"
                   value={cashCAD}
                   onChange={(e) => setCashCAD(e.target.value)}
-                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
                 />
               </div>
-              <div>
+              <div className="form-group">
                 <label>USD Cash:</label>
                 <input
                   type="number"
                   step="0.01"
                   value={cashUSD}
                   onChange={(e) => setCashUSD(e.target.value)}
-                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
                 />
               </div>
             </div>
-            <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
+            <div className="flex gap-md mt-md">
               <button
                 onClick={handleUpdateCash}
                 disabled={updateCashMutation.isPending}
-                style={{ backgroundColor: '#28a745', padding: '10px 20px' }}
+                className="btn-success"
               >
                 {updateCashMutation.isPending ? 'Saving...' : 'Save Cash Balance'}
               </button>
@@ -480,15 +453,15 @@ export default function PortfolioDetail() {
       <div style={{ marginTop: '30px' }}>
         <h2>Holdings</h2>
         {portfolio?.holdings && portfolio.holdings.length > 0 ? (
-          <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px' }}>
+          <table className="mt-md">
             <thead>
-              <tr style={{ borderBottom: '2px solid #ddd', backgroundColor: '#f5f5f5' }}>
-                <th style={{ padding: '10px', textAlign: 'left' }}>Symbol</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Quantity</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Avg Cost</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Current Price</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Value</th>
-                <th style={{ padding: '10px', textAlign: 'right' }}>Gain/Loss</th>
+              <tr>
+                <th>Symbol</th>
+                <th style={{ textAlign: 'right' }}>Quantity</th>
+                <th style={{ textAlign: 'right' }}>Avg Cost</th>
+                <th style={{ textAlign: 'right' }}>Current Price</th>
+                <th style={{ textAlign: 'right' }}>Value</th>
+                <th style={{ textAlign: 'right' }}>Gain/Loss</th>
               </tr>
             </thead>
             <tbody>
@@ -544,17 +517,17 @@ export default function PortfolioDetail() {
         </div>
         {transactions && transactions.length > 0 ? (
           <>
-            <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '15px' }}>
+            <table className="mt-md">
               <thead>
-                <tr style={{ borderBottom: '2px solid #ddd', backgroundColor: '#f5f5f5' }}>
-                  <th style={{ padding: '10px', textAlign: 'left' }}>Date</th>
-                  <th style={{ padding: '10px', textAlign: 'left' }}>Type</th>
-                  <th style={{ padding: '10px', textAlign: 'left' }}>Symbol</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Quantity</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Price</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Currency</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Total</th>
-                  <th style={{ padding: '10px', textAlign: 'center' }}>Actions</th>
+                <tr>
+                  <th>Date</th>
+                  <th>Type</th>
+                  <th>Symbol</th>
+                  <th style={{ textAlign: 'right' }}>Quantity</th>
+                  <th style={{ textAlign: 'right' }}>Price</th>
+                  <th style={{ textAlign: 'right' }}>Currency</th>
+                  <th style={{ textAlign: 'right' }}>Total</th>
+                  <th style={{ textAlign: 'center' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>

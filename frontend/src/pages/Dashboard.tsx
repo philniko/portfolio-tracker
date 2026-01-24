@@ -110,44 +110,38 @@ export default function Dashboard() {
   };
 
   return (
-    <div style={{ padding: '20px', maxWidth: '1200px', margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '20px' }}>
-        <h1>Portfolio Dashboard</h1>
-        <div>
-          <span style={{ marginRight: '20px' }}>Welcome, {user?.username}!</span>
-          <button onClick={logout}>Logout</button>
+    <div className="container">
+      <div className="dashboard-header">
+        <h1 className="page-title" style={{ fontSize: '36px' }}>Portfolio Dashboard</h1>
+        <div className="flex gap-md" style={{ alignItems: 'center' }}>
+          <span className="font-bold">Welcome, {user?.username}!</span>
+          <button onClick={logout} className="btn-secondary">Logout</button>
         </div>
       </div>
 
       {questradeMessage && (
-        <div style={{
-          padding: '15px',
-          marginBottom: '20px',
-          backgroundColor: questradeMessage.includes('success') ? '#d4edda' : '#f8d7da',
-          color: questradeMessage.includes('success') ? '#155724' : '#721c24',
-          borderRadius: '8px',
-        }}>
+        <div className={questradeMessage.includes('success') ? 'alert alert-success' : 'alert alert-error'}>
           {questradeMessage}
         </div>
       )}
 
-      <div style={{ marginBottom: '30px', padding: '20px', border: '1px solid #ddd', borderRadius: '8px', backgroundColor: '#f9f9f9' }}>
-        <h2 style={{ marginTop: 0 }}>Questrade Integration</h2>
+      <div className="card mb-xl">
+        <h2 className="card-header">Questrade Integration</h2>
         {questradeStatus?.connected ? (
           <div>
-            <p style={{ color: '#28a745', fontWeight: 'bold' }}>
+            <p className="text-success font-bold">
               ✓ Questrade Connected
               {questradeStatus.last_sync_at && (
-                <span style={{ marginLeft: '10px', fontWeight: 'normal', color: '#666' }}>
+                <span className="font-medium text-secondary" style={{ marginLeft: '10px' }}>
                   (Last synced: {new Date(questradeStatus.last_sync_at).toLocaleString()})
                 </span>
               )}
             </p>
-            <p>Accounts: {questradeStatus.account_count}</p>
+            <p className="mb-md">Accounts: {questradeStatus.account_count}</p>
             <div className="flex gap-md mt-md">
               <Link
                 to="/questrade/positions"
-                className="btn btn-primary"
+                className="btn-primary"
                 style={{ textDecoration: 'none' }}
               >
                 View Positions & Sync
@@ -163,7 +157,7 @@ export default function Dashboard() {
           </div>
         ) : (
           <div>
-            <p>Connect your Questrade account to automatically sync your holdings and transactions.</p>
+            <p className="mb-md">Connect your Questrade account to automatically sync your holdings and transactions.</p>
 
             {!showTokenInput ? (
               <div>
@@ -181,53 +175,53 @@ export default function Dashboard() {
                 </p>
               </div>
             ) : (
-              <div style={{ marginTop: '15px' }}>
-                <div className="alert alert-info" style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#e7f3ff', border: '1px solid #b3d9ff', borderRadius: '5px' }}>
-                  <h4 style={{ marginTop: 0, marginBottom: '10px' }}>📋 How to Get Your Questrade Refresh Token:</h4>
+              <div className="mt-md">
+                <div className="alert alert-info mb-md">
+                  <h4 className="font-bold mb-sm" style={{ fontSize: '14px' }}>📋 How to Get Your Questrade Refresh Token:</h4>
                   <ol style={{ marginLeft: '20px', marginBottom: '10px' }}>
-                    <li style={{ marginBottom: '8px' }}>
+                    <li className="mb-sm">
                       Log in to your Questrade account at{' '}
                       <a href="https://www.questrade.com" target="_blank" rel="noopener noreferrer">
                         questrade.com
                       </a>
                     </li>
-                    <li style={{ marginBottom: '8px' }}>
+                    <li className="mb-sm">
                       Go to the{' '}
                       <a href="https://www.questrade.com/api" target="_blank" rel="noopener noreferrer">
                         Questrade API Portal
                       </a>
                     </li>
-                    <li style={{ marginBottom: '8px' }}>
+                    <li className="mb-sm">
                       Click <strong>"Generate Refresh Token"</strong>
                     </li>
-                    <li style={{ marginBottom: '8px' }}>
+                    <li className="mb-sm">
                       Copy the refresh token (starts with a long string of letters and numbers)
                     </li>
-                    <li style={{ marginBottom: '8px' }}>
+                    <li className="mb-sm">
                       Paste it in the field below
                     </li>
                   </ol>
-                  <p style={{ marginBottom: 0, fontSize: '14px', color: '#666' }}>
+                  <p className="text-sm text-secondary">
                     <strong>Note:</strong> Your refresh token is stored securely and is only used to access your Questrade data.
                     Each user connects their own Questrade account - tokens are not shared.
                   </p>
                 </div>
 
-                <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
-                  Enter Refresh Token:
-                </label>
-                <input
-                  type="text"
-                  value={refreshToken}
-                  onChange={(e) => setRefreshToken(e.target.value)}
-                  placeholder="Paste your Questrade refresh token here..."
-                  style={{ width: '100%', padding: '10px', marginBottom: '10px', maxWidth: '600px', fontFamily: 'monospace', fontSize: '13px' }}
-                />
-                <div>
+                <div className="form-group">
+                  <label>Enter Refresh Token:</label>
+                  <input
+                    type="text"
+                    value={refreshToken}
+                    onChange={(e) => setRefreshToken(e.target.value)}
+                    placeholder="Paste your Questrade refresh token here..."
+                    style={{ maxWidth: '600px' }}
+                  />
+                </div>
+                <div className="flex gap-md">
                   <button
                     onClick={() => connectTokenMutation.mutate(refreshToken)}
                     disabled={!refreshToken || connectTokenMutation.isPending}
-                    style={{ backgroundColor: '#28a745', marginRight: '10px' }}
+                    className="btn-success"
                   >
                     {connectTokenMutation.isPending ? 'Connecting...' : 'Connect'}
                   </button>
@@ -236,7 +230,7 @@ export default function Dashboard() {
                       setShowTokenInput(false);
                       setRefreshToken('');
                     }}
-                    style={{ backgroundColor: '#6c757d' }}
+                    className="btn-secondary"
                   >
                     Cancel
                   </button>
@@ -247,28 +241,22 @@ export default function Dashboard() {
         )}
       </div>
 
-      <div style={{ marginBottom: '30px' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-          <h2>Your Portfolios</h2>
+      <div className="mb-xl">
+        <div className="flex-between mb-lg">
+          <h2 className="card-header" style={{ marginBottom: 0, border: 'none', padding: 0 }}>Your Portfolios</h2>
           <button
             onClick={() => setShowCreateForm(!showCreateForm)}
-            style={{ backgroundColor: '#28a745', padding: '10px 20px' }}
+            className="btn-success"
           >
             {showCreateForm ? 'Cancel' : '+ Create Portfolio'}
           </button>
         </div>
 
         {showCreateForm && (
-          <div style={{
-            padding: '20px',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            marginBottom: '20px',
-            backgroundColor: '#f9f9f9'
-          }}>
-            <h3>Create New Portfolio</h3>
+          <div className="card mb-lg">
+            <h3 className="font-extrabold mb-md">Create New Portfolio</h3>
             <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: '15px' }}>
+              <div className="form-group">
                 <label>Portfolio Name:</label>
                 <input
                   type="text"
@@ -276,21 +264,19 @@ export default function Dashboard() {
                   onChange={(e) => setName(e.target.value)}
                   required
                   placeholder="e.g., Tech Stocks, Growth Portfolio"
-                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
                 />
               </div>
-              <div style={{ marginBottom: '15px' }}>
+              <div className="form-group">
                 <label>Description (optional):</label>
                 <textarea
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   placeholder="Describe your investment strategy..."
                   rows={3}
-                  style={{ width: '100%', padding: '8px', marginTop: '5px' }}
                 />
               </div>
-              {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
-              <button type="submit" disabled={createMutation.isPending}>
+              {error && <div className="alert alert-error">{error}</div>}
+              <button type="submit" disabled={createMutation.isPending} className="btn-primary">
                 {createMutation.isPending ? 'Creating...' : 'Create Portfolio'}
               </button>
             </form>
@@ -298,21 +284,14 @@ export default function Dashboard() {
         )}
 
         {isLoading ? (
-          <p>Loading...</p>
+          <p className="font-bold">Loading...</p>
         ) : portfolios && portfolios.length > 0 ? (
-          <div style={{ display: 'grid', gap: '20px', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+          <div className="portfolio-grid">
             {portfolios.map((portfolio: any) => (
               <div
                 key={portfolio.id}
-                style={{
-                  position: 'relative',
-                  padding: '20px',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  transition: 'box-shadow 0.2s',
-                }}
-                onMouseOver={(e) => (e.currentTarget.style.boxShadow = '0 4px 8px rgba(0,0,0,0.1)')}
-                onMouseOut={(e) => (e.currentTarget.style.boxShadow = 'none')}
+                className="card"
+                style={{ position: 'relative' }}
               >
                 <Link
                   to={`/portfolio/${portfolio.id}`}
@@ -322,18 +301,18 @@ export default function Dashboard() {
                     display: 'block',
                   }}
                 >
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <h3>{portfolio.name}</h3>
+                  <div className="flex gap-md" style={{ alignItems: 'center', marginBottom: '12px' }}>
+                    <h3 className="font-extrabold">{portfolio.name}</h3>
                     {portfolio.questrade_account_id && (
-                      <span className="badge badge-success" style={{ fontSize: '12px' }}>
+                      <span className="badge badge-success">
                         🔗 Questrade
                       </span>
                     )}
                   </div>
-                  <p style={{ color: '#666' }}>{portfolio.description || 'No description'}</p>
-                  <p style={{ marginTop: '10px', fontWeight: 'bold' }}>Holdings: {portfolio.holdings_count}</p>
+                  <p className="text-secondary mb-md">{portfolio.description || 'No description'}</p>
+                  <p className="font-bold mt-md">Holdings: {portfolio.holdings_count}</p>
                   {portfolio.last_questrade_sync && (
-                    <p style={{ marginTop: '5px', fontSize: '12px', color: '#888' }}>
+                    <p className="text-sm text-secondary mt-sm">
                       Last synced: {new Date(portfolio.last_questrade_sync).toLocaleString()}
                     </p>
                   )}
@@ -341,17 +320,13 @@ export default function Dashboard() {
                 <button
                   onClick={(e) => handleDelete(e, portfolio.id, portfolio.name)}
                   disabled={deleteMutation.isPending}
+                  className="btn-danger"
                   style={{
                     position: 'absolute',
                     top: '15px',
                     right: '15px',
-                    backgroundColor: '#dc3545',
-                    color: 'white',
-                    border: 'none',
-                    padding: '5px 10px',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontSize: '12px',
+                    padding: '8px 12px',
+                    fontSize: '11px',
                   }}
                 >
                   Delete
@@ -360,7 +335,7 @@ export default function Dashboard() {
             ))}
           </div>
         ) : (
-          <p style={{ padding: '40px', textAlign: 'center', color: '#666' }}>
+          <p className="text-secondary text-center" style={{ padding: '40px' }}>
             No portfolios yet. Click "Create Portfolio" to get started!
           </p>
         )}

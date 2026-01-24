@@ -74,7 +74,7 @@ export default function QuestradePositions() {
   };
 
   if (accountsLoading) {
-    return <div style={{ padding: '20px' }}>Loading...</div>;
+    return <div className="container"><p className="font-bold">Loading...</p></div>;
   }
 
   return (
@@ -99,13 +99,13 @@ export default function QuestradePositions() {
         {accountsError && (
           <div className="alert alert-error">
             <strong>Questrade Connection Expired</strong>
-            <p style={{ marginTop: '10px', marginBottom: '10px' }}>
+            <p className="mt-md mb-md">
               Your Questrade access token has expired. Questrade tokens expire after 30 minutes.
             </p>
-            <p style={{ marginBottom: '10px' }}>
+            <p className="mb-md">
               To reconnect:
             </p>
-            <ol style={{ marginLeft: '20px', marginBottom: '10px' }}>
+            <ol style={{ marginLeft: '20px' }} className="mb-md">
               <li>Go back to the <Link to="/dashboard">Dashboard</Link></li>
               <li>Click "Disconnect" in the Questrade section</li>
               <li>Get a new refresh token from <a href="https://www.questrade.com/api" target="_blank" rel="noopener noreferrer">Questrade API Portal</a></li>
@@ -118,12 +118,8 @@ export default function QuestradePositions() {
             <div
               key={account.number}
               onClick={() => setSelectedAccount(account.number)}
-              className="card"
-              style={{
-                cursor: 'pointer',
-                border: selectedAccount === account.number ? '2px solid var(--primary)' : '1px solid var(--border-color)',
-                background: selectedAccount === account.number ? 'linear-gradient(135deg, #e0e7ff 0%, #f5f3ff 100%)' : 'var(--bg-primary)',
-              }}
+              className={selectedAccount === account.number ? 'card border-thick bg-yellow' : 'card'}
+              style={{ cursor: 'pointer' }}
             >
               <div className="font-bold text-lg">{account.type}</div>
               <div className="text-sm text-secondary">Account: {account.number}</div>
@@ -146,7 +142,7 @@ export default function QuestradePositions() {
             </div>
           )}
           {balances && balances.length > 0 && (
-            <div className="card mb-lg" style={{ background: 'linear-gradient(135deg, #dbeafe 0%, #e0e7ff 100%)' }}>
+            <div className="card mb-lg bg-cream">
               <h3 className="card-header">Account Balances</h3>
               <div className="grid grid-auto gap-md">
                 {balances.map((balance: any, index: number) => (
@@ -167,7 +163,7 @@ export default function QuestradePositions() {
           <div className="card mb-lg">
             <h3 className="card-header">Sync to Portfolio</h3>
             <div className="flex gap-md" style={{ alignItems: 'flex-start', flexWrap: 'wrap' }}>
-              <div style={{ flex: 1, minWidth: '250px' }}>
+              <div className="form-group" style={{ flex: 1, minWidth: '250px' }}>
                 <label>Select Portfolio</label>
                 <select
                   value={selectedPortfolio || ''}
@@ -184,8 +180,7 @@ export default function QuestradePositions() {
               <button
                 onClick={handleSync}
                 disabled={!selectedPortfolio || syncMutation.isPending}
-                className="btn-success"
-                style={{ marginTop: '24px' }}
+                className="btn-success mt-lg"
               >
                 {syncMutation.isPending ? 'Syncing...' : 'Sync Positions'}
               </button>
@@ -206,14 +201,14 @@ export default function QuestradePositions() {
           ) : positions && positions.length > 0 ? (
             <table>
               <thead>
-                <tr style={{ borderBottom: '2px solid #ddd', backgroundColor: '#f5f5f5' }}>
-                  <th style={{ padding: '10px', textAlign: 'left' }}>Symbol</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Quantity</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Avg Cost</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Current Price</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>Market Value</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>P&L</th>
-                  <th style={{ padding: '10px', textAlign: 'right' }}>% Gain/Loss</th>
+                <tr>
+                  <th>Symbol</th>
+                  <th style={{ textAlign: 'right' }}>Quantity</th>
+                  <th style={{ textAlign: 'right' }}>Avg Cost</th>
+                  <th style={{ textAlign: 'right' }}>Current Price</th>
+                  <th style={{ textAlign: 'right' }}>Market Value</th>
+                  <th style={{ textAlign: 'right' }}>P&L</th>
+                  <th style={{ textAlign: 'right' }}>% Gain/Loss</th>
                 </tr>
               </thead>
               <tbody>
@@ -223,28 +218,26 @@ export default function QuestradePositions() {
                     : 0;
 
                   return (
-                    <tr key={index} style={{ borderBottom: '1px solid #eee' }}>
-                      <td style={{ padding: '10px', fontWeight: 'bold' }}>{position.symbol}</td>
-                      <td style={{ padding: '10px', textAlign: 'right' }}>{position.openQuantity.toFixed(2)}</td>
-                      <td style={{ padding: '10px', textAlign: 'right' }}>${position.averageEntryPrice.toFixed(2)}</td>
-                      <td style={{ padding: '10px', textAlign: 'right' }}>${position.currentPrice.toFixed(2)}</td>
-                      <td style={{ padding: '10px', textAlign: 'right' }}>${position.currentMarketValue.toFixed(2)}</td>
+                    <tr key={index}>
+                      <td className="font-bold">{position.symbol}</td>
+                      <td style={{ textAlign: 'right' }}>{position.openQuantity.toFixed(2)}</td>
+                      <td style={{ textAlign: 'right' }}>${position.averageEntryPrice.toFixed(2)}</td>
+                      <td style={{ textAlign: 'right' }}>${position.currentPrice.toFixed(2)}</td>
+                      <td style={{ textAlign: 'right' }}>${position.currentMarketValue.toFixed(2)}</td>
                       <td
+                        className="font-bold"
                         style={{
-                          padding: '10px',
                           textAlign: 'right',
-                          color: position.openPnL >= 0 ? 'green' : 'red',
-                          fontWeight: 'bold',
+                          color: position.openPnL >= 0 ? '#00C853' : '#FF0000',
                         }}
                       >
                         ${position.openPnL.toFixed(2)}
                       </td>
                       <td
+                        className="font-bold"
                         style={{
-                          padding: '10px',
                           textAlign: 'right',
-                          color: pnlPercent >= 0 ? 'green' : 'red',
-                          fontWeight: 'bold',
+                          color: pnlPercent >= 0 ? '#00C853' : '#FF0000',
                         }}
                       >
                         {pnlPercent.toFixed(2)}%
@@ -255,7 +248,7 @@ export default function QuestradePositions() {
               </tbody>
             </table>
           ) : (
-            <p style={{ padding: '20px', textAlign: 'center', color: '#666' }}>
+            <p className="text-secondary text-center" style={{ padding: '40px' }}>
               No positions found in this account.
             </p>
           )}

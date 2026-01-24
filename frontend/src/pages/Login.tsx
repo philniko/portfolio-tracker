@@ -21,35 +21,33 @@ export default function Login() {
   };
 
   return (
-    <div style={{ maxWidth: '400px', margin: '100px auto', padding: '20px' }}>
-      <h1>Login</h1>
+    <div className="auth-container">
+      <h1 className="page-title" style={{ fontSize: '32px', marginBottom: '24px' }}>Login</h1>
       <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
+        <div className="form-group">
           <label>Email:</label>
           <input
             type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', marginTop: '5px' }}
           />
         </div>
-        <div style={{ marginBottom: '15px' }}>
+        <div className="form-group">
           <label>Password:</label>
           <input
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            style={{ width: '100%', padding: '8px', marginTop: '5px' }}
           />
         </div>
-        {error && <div style={{ color: 'red', marginBottom: '10px' }}>{error}</div>}
-        <button type="submit" style={{ width: '100%', padding: '10px' }}>
+        {error && <div className="alert alert-error">{error}</div>}
+        <button type="submit" className="btn-primary" style={{ width: '100%' }}>
           Login
         </button>
       </form>
-      <p style={{ marginTop: '20px' }}>
+      <p className="mt-lg" style={{ textAlign: 'center' }}>
         Don't have an account? <Link to="/register">Register</Link>
       </p>
     </div>
