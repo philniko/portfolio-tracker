@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Numeric, Enum as SQLEnum
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Numeric, Enum as SQLEnum, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.db.session import Base
@@ -50,5 +50,5 @@ class Holding(Base):
 
     # Ensure one holding per symbol per portfolio
     __table_args__ = (
-        {"schema": None},
+        UniqueConstraint('portfolio_id', 'symbol', name='uix_holding_portfolio_symbol'),
     )

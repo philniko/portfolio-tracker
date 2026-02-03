@@ -126,7 +126,7 @@ class QuestradeSyncService:
                     Transaction.notes.contains(f"Synced from Questrade account {account_id}")
                 )
             )
-            existing = result.scalar_one_or_none()
+            existing = result.scalars().first()
 
             if existing:
                 skipped_count += 1
@@ -265,7 +265,7 @@ class QuestradeSyncService:
                     )
                 )
             )
-            existing = result.scalar_one_or_none()
+            existing = result.scalars().first()
 
             if existing:
                 continue  # Skip duplicate
