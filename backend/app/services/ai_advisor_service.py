@@ -5,7 +5,6 @@ from decimal import Decimal
 
 
 class AIAdvisorService:
-    """Service for AI-powered portfolio analysis and investment advice."""
 
     def __init__(self):
         api_key = os.getenv("OPENAI_API_KEY")
@@ -17,17 +16,7 @@ class AIAdvisorService:
         holdings: List[Dict],
         transactions: List[Dict],
     ) -> str:
-        """
-        Analyze a portfolio and provide AI-powered investment advice.
 
-        Args:
-            portfolio_data: Portfolio summary (total value, cost, gain/loss, etc.)
-            holdings: List of current holdings with prices and performance
-            transactions: Recent transaction history
-
-        Returns:
-            AI-generated analysis and recommendations
-        """
         if not self.client:
             return "AI advisor is not configured. Please add your OpenAI API key to enable this feature."
 
